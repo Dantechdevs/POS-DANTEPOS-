@@ -592,6 +592,21 @@ class AdminSidebarMenu
                             );
                         }
 
+                        if (auth()->user()->can('purchase.view') || auth()->user()->can('supplier.view')) {
+                            $sub->url(
+                                url('/reports/payables-aging'),
+                                'Payables Aging',
+                                ['icon' => '', 'active' => request()->segment(2) == 'payables-aging']
+                            );
+                        }
+                        if (auth()->user()->can('product.view')) {
+                            $sub->url(
+                                url('/reports/reorder'),
+                                'Reorder List',
+                                ['icon' => '', 'active' => request()->segment(2) == 'reorder']
+                            );
+                        }
+
                         if (auth()->user()->can('profit_loss_report.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\ReportController::class, 'getProfitLoss']),
