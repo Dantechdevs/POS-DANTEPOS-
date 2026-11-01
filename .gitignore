@@ -25,4 +25,6 @@ npm-debug.log
 .scribe
 /public/docs
 /public/js/skins/
-/public/js/icons/
+/public/js/icons/error_log
+ngrok.exe
+mpesa_diff.txt
