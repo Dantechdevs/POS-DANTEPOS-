@@ -280,6 +280,13 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/customer-supplier', [ReportController::class, 'getCustomerSuppliers']);
     Route::get('/reports/debtors-aging', [\App\Http\Controllers\DebtorsAgingController::class, 'index'])->name('reports.debtors_aging');
     Route::get('/reports/mpesa-reconciliation', [\App\Http\Controllers\MpesaReconciliationController::class, 'index'])->name('reports.mpesa_reconciliation');
+    Route::get('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'index'])->name('giftcards.index');
+    Route::post('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'store'])->name('giftcards.store');
+    Route::get('/gift-cards/check', [\App\Http\Controllers\GiftCardController::class, 'check'])->middleware('throttle:30,1')->name('giftcards.check');
+    Route::get('/gift-cards/{id}', [\App\Http\Controllers\GiftCardController::class, 'show'])->name('giftcards.show');
+    Route::post('/gift-cards/{id}/topup', [\App\Http\Controllers\GiftCardController::class, 'topup'])->name('giftcards.topup');
+    Route::post('/gift-cards/{id}/void', [\App\Http\Controllers\GiftCardController::class, 'void'])->name('giftcards.void');
+    Route::post('/gift-cards/{id}/sms', [\App\Http\Controllers\GiftCardController::class, 'sms'])->name('giftcards.sms');
     Route::get('/stocktakes', [\App\Http\Controllers\StocktakeController::class, 'index'])->name('stocktakes.index');
     Route::post('/stocktakes', [\App\Http\Controllers\StocktakeController::class, 'store'])->name('stocktakes.store');
     Route::get('/stocktakes/{id}', [\App\Http\Controllers\StocktakeController::class, 'show'])->name('stocktakes.show');

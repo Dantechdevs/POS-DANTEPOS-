@@ -763,6 +763,7 @@ class TransactionUtil extends Util
                         'mpesa_receipt_number' => isset($payment['mpesa_receipt_number']) ? $payment['mpesa_receipt_number'] : null,
                         'mpesa_checkout_request_id' => isset($payment['mpesa_checkout_request_id']) ? $payment['mpesa_checkout_request_id'] : null,
                         'mpesa_merchant_request_id' => isset($payment['mpesa_merchant_request_id']) ? $payment['mpesa_merchant_request_id'] : null,
+                        'gift_card_code' => isset($payment['gift_card_code']) ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $payment['gift_card_code'])) : null,
                         'note' => isset($payment['note']) ? $payment['note'] : null,
                         'paid_on' => $paid_on,
                         'created_by' => empty($user_id) ? auth()->user()->id : $user_id,

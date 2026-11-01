@@ -29,7 +29,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        \Illuminate\Support\Facades\Event::listen(\App\Events\SellCreatedOrModified::class, \App\Listeners\SendSmsReceipt::class);
+
         \App\Transaction::observe(\App\Observers\EtimsSaleObserver::class);
+        \App\TransactionPayment::observe(\App\Observers\GiftCardPaymentObserver::class);
 
         ini_set('memory_limit', '-1');
         set_time_limit(0);
