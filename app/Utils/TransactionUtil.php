@@ -4154,6 +4154,10 @@ class TransactionUtil extends Util
         $exclude_transaction_id = null,
         $uf_number = true
     ) {
+        if (\App\Utils\CreditGuard::canOverrideLimit()) {
+            return false; // manager override: credit limit not enforced
+        }
+
         //If draft ignore credit limit check
         if ($input['status'] == 'draft' || (isset($input['type']) && $input['type'] == 'sales_order')) {
             return false;
