@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        \App\Transaction::observe(\App\Observers\EtimsSaleObserver::class);
+
         ini_set('memory_limit', '-1');
         set_time_limit(0);
 
