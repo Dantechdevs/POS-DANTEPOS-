@@ -607,6 +607,14 @@ class AdminSidebarMenu
                             );
                         }
 
+                        if (auth()->user()->can('product.view')) {
+                            $sub->url(
+                                url('/reports/expiry-watch'),
+                                'Expiry Watch',
+                                ['icon' => '', 'active' => request()->segment(2) == 'expiry-watch']
+                            );
+                        }
+
                         if (auth()->user()->can('profit_loss_report.view')) {
                             $sub->url(
                                 action([\App\Http\Controllers\ReportController::class, 'getProfitLoss']),
