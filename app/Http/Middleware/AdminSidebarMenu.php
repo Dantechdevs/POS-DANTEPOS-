@@ -617,6 +617,14 @@ class AdminSidebarMenu
 
                         if (auth()->user()->can('profit_loss_report.view')) {
                             $sub->url(
+                                url('/reports/margins'),
+                                'Profit Margins',
+                                ['icon' => '', 'active' => request()->segment(2) == 'margins']
+                            );
+                        }
+
+                        if (auth()->user()->can('profit_loss_report.view')) {
+                            $sub->url(
                                 action([\App\Http\Controllers\ReportController::class, 'getProfitLoss']),
                                 __('report.profit_loss'),
                                 ['icon' => '', 'active' => request()->segment(2) == 'profit-loss']

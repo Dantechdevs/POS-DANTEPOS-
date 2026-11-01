@@ -283,6 +283,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/payables-aging', [\App\Http\Controllers\PayablesAgingController::class, 'index'])->name('reports.payables_aging');
     Route::get('/reports/reorder', [\App\Http\Controllers\ReorderController::class, 'index'])->name('reports.reorder');
     Route::get('/reports/expiry-watch', [\App\Http\Controllers\ExpiryWatchController::class, 'index'])->name('reports.expiry_watch');
+    Route::get('/reports/margins', [\App\Http\Controllers\MarginReportController::class, 'index'])->name('reports.margins');
     Route::get('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'index'])->name('giftcards.index');
     Route::post('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'store'])->name('giftcards.store');
     Route::get('/gift-cards/check', [\App\Http\Controllers\GiftCardController::class, 'check'])->middleware('throttle:30,1')->name('giftcards.check');

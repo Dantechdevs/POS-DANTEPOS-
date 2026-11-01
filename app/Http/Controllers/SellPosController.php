@@ -380,6 +380,14 @@ class SellPosController extends Controller
                 : redirect()->back()->with('status', $output)->withInput();
         }
 
+        if ($msg = \App\Services\PriceGuard::violation($request, $business_id)) {
+            $output = ['success' => 0, 'msg' => $msg];
+
+            return ($request->ajax() || $request->wantsJson())
+                ? response()->json($output)
+                : redirect()->back()->with('status', $output)->withInput();
+        }
+
         if ($msg = \App\Utils\CreditGuard::walkInCreditViolation($request, $business_id)) {
             $output = ['success' => 0, 'msg' => $msg];
 
@@ -1226,6 +1234,14 @@ class SellPosController extends Controller
                 $business_id = $request->session()->get('user.business_id');
 
             if ($msg = \App\Services\GiftCardService::violation($request, $business_id)) {
+                $output = ['success' => 0, 'msg' => $msg];
+
+                return ($request->ajax() || $request->wantsJson())
+                    ? response()->json($output)
+                    : redirect()->back()->with('status', $output)->withInput();
+            }
+
+            if ($msg = \App\Services\PriceGuard::violation($request, $business_id)) {
                 $output = ['success' => 0, 'msg' => $msg];
 
                 return ($request->ajax() || $request->wantsJson())
