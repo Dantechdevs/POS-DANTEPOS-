@@ -1,201 +1,300 @@
-# DantePOS - V6.11
+# DantePOS
 
-[![Version](https://img.shields.io/badge/version-6.11-blue)](https://github.com/Dantechdevs/DantePOS)  
-[![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)](https://github.com/Dantechdevs/DantePOS)  
+[![Version](https://img.shields.io/badge/version-6.11-blue)](https://github.com/Dantechdevs/DantePOS)
+[![Made in Kenya](https://img.shields.io/badge/made%20in-Kenya-006600)](https://dantechdevelopers.com)
+[![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)](#license)
 
-**DantePOS** is a full-featured Point of Sale (POS) and business management system designed for retail stores, restaurants, salons, service centers, and more. It includes M-Pesa integration, inventory management, reporting, user management, and modular addons for easy expansion.  
+**DantePOS** is a Point of Sale and business management system built for Kenyan retail, wholesale, restaurants, salons and service businesses. It combines sales, inventory, purchasing, expenses and reporting with **M-Pesa payments** and Kenya-specific tax and receipt workflows.
 
-**Author:** Dantechdevs  
-**Copyright:** © 2026 All rights reserved  
+**Author:** [Dantechdevs](https://github.com/Dantechdevs) (DanTech Developers)
+**Copyright:** © 2026 All rights reserved
 
 ---
 
 ## Table of Contents
 
-- [Getting Started](#getting-started)  
-- [Business Management](#business-management)  
-- [User Management](#user-management)  
-- [Contact Management](#contact-management)  
-- [Products](#products)  
-- [Purchases](#purchases)  
-- [Stock Transfer](#stock-transfer)  
-- [Sales / Sell](#sales--sell)  
-- [Tax Settings](#tax-settings)  
-- [Payment Accounts](#payment-accounts)  
-- [Stock Adjustment](#stock-adjustment)  
-- [Reports](#reports)  
-- [Backups](#backups)  
-- [Expense Management](#expense-management)  
-- [Notifications](#notifications)  
-- [Settings](#settings)  
-- [Hardware Support](#hardware-support)  
-- [Technical Details](#technical-details)  
-- [Other Features](#other-features)  
-- [Module Development & Addons](#module-development--addons)  
-- [Frequently Asked Questions](#frequently-asked-questions)  
-- [Feature List](#feature-list)  
-- [Release Notes & Version Log](#release-notes--version-log)  
-- [Mobile App](#mobile-app)  
-- [Contact & Support](#contact--support)  
+- [Features at a Glance](#features-at-a-glance)
+- [Kenya-Specific Features](#kenya-specific-features)
+- [M-Pesa Integration](#m-pesa-integration)
+- [Getting Started](#getting-started)
+- [Core Modules](#core-modules)
+- [Wholesale & Credit Sales](#wholesale--credit-sales)
+- [Hardware Support](#hardware-support)
+- [Security](#security)
+- [Technical Details](#technical-details)
+- [Module Development & Addons](#module-development--addons)
+- [Roadmap](#roadmap)
+- [FAQ](#faq)
+- [Release Notes](#release-notes)
+- [Contact & Support](#contact--support)
+- [License](#license)
+
+---
+
+## Features at a Glance
+
+- Retail and wholesale POS with barcode scanning and thermal receipt printing
+- **M-Pesa STK Push** at checkout, with transaction tracking
+- Inventory, purchases, stock transfers and stock adjustments
+- Multi-branch / multi-location support
+- Customers, suppliers and credit sales
+- Expenses, reports and exports (PDF / Excel)
+- Role-based access control
+- Backups and notifications
+- Modular structure for custom addons
+
+---
+
+## Kenya-Specific Features
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Currency (KES / KSh) | Available | Default currency across the dashboard, POS and reports |
+| M-Pesa STK Push | Available | See [M-Pesa Integration](#m-pesa-integration) |
+| VAT (16%) with inclusive / exclusive pricing | Available via tax settings | Configure rates under Tax Settings |
+| Customer KRA PIN on invoices | Planned | See [Roadmap](#roadmap) |
+| KRA eTIMS e-invoicing | Planned | Confirm current KRA requirements before go-live |
+| M-Pesa Till / Paybill reconciliation (C2B) | Planned | Match real payments to sales automatically |
+| Phone number normalisation (`2547XXXXXXXX`) | Planned | For M-Pesa and SMS |
+| SMS receipts and reminders (Africa's Talking) | Planned | Receipts, credit reminders, low-stock alerts |
+| Swahili interface labels | Planned | English and Swahili |
+
+---
+
+## M-Pesa Integration
+
+DantePOS integrates with Safaricom's **Daraja API**.
+
+**How it works**
+
+1. The cashier selects **M-Pesa** on the payment screen and enters the customer's phone number.
+2. DantePOS sends an **STK Push** prompt to the customer's phone.
+3. The sale stays **pending** until Safaricom's callback confirms the payment.
+4. On confirmation, the M-Pesa receipt number is stored against the payment and the sale is completed.
+
+**Components**
+
+- `app/Services/MpesaService.php` for Daraja authentication and STK Push requests
+- `app/Http/Controllers/MpesaController.php` for push requests, callbacks and status checks
+- `app/Models/MpesaTransaction.php` and the `mpesa_transactions` table for transaction records
+- `public/plugins/mpesa/mpesa.js` for the POS checkout script
+
+**Configuration**
+
+Add your Daraja credentials to `.env` (never commit this file):
+
+```env
+MPESA_CONSUMER_KEY=
+MPESA_CONSUMER_SECRET=
+MPESA_PASSKEY=
+```
+
+See `.env.example` for the complete list of M-Pesa variables (shortcode, environment, callback URL).
+
+**Testing locally**
+
+Daraja needs a public HTTPS callback URL. Use a tunnel such as [ngrok](https://ngrok.com), set the tunnel URL as your callback in `.env`, then run:
+
+```bash
+php artisan config:clear
+```
+
+Do not commit the ngrok binary.
+
+**Going live checklist**
+
+- [ ] Switch `MPESA` environment from sandbox to production
+- [ ] Use your production Till / Paybill shortcode and passkey
+- [ ] Register a public HTTPS callback URL
+- [ ] Confirm the callback route is excluded from CSRF and authentication
+- [ ] Test a real small-value payment end to end
 
 ---
 
 ## Getting Started
 
-1. Clone the repository:  
+**Requirements**
+
+- PHP and Composer (see `composer.json` for the supported versions)
+- MySQL / MariaDB
+- Node.js and npm (for assets)
+- XAMPP, Laragon or any LAMP/LEMP stack
+
+**Installation**
+
 ```bash
 git clone https://github.com/Dantechdevs/DantePOS.git
-Configure your .env file with database, email, and M-Pesa credentials.
+cd DantePOS
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-Run migrations and seeders to set up tables:
+Configure database, mail and M-Pesa credentials in `.env`, then:
 
-bash
-Copy code
+```bash
 php artisan migrate --seed
-Access the system via your browser: http://localhost/dantepos or your hosted URL.
+npm install
+npm run dev
+php artisan serve
+```
 
-Business Management
-Manage business details, logos, and multi-branch setups.
+Open `http://127.0.0.1:8000` in your browser.
 
-Set default currency, business hours, and system preferences.
+---
 
-User Management
-Add, edit, and assign roles for employees and staff.
+## Core Modules
 
-Role-based access ensures security and controlled access to modules.
+### Business Management
+Business details, logo, multi-branch setup, default currency, business hours and system preferences.
 
-Contact Management
-Add and manage customers, suppliers, and vendors.
+### User Management
+Employees, staff and roles. Role-based permissions control what each user can see and do.
 
-Track purchase and sales history per contact.
+### Contacts
+Customers, suppliers and vendors, with purchase and sales history per contact.
 
-Products
-Add products with SKU, barcode, price, and category.
+### Products
+SKU, barcode, price and category. Variations, stock levels and reorder points.
 
-Manage variations, stock levels, and reorder points.
+### Purchases
+Supplier purchases and purchase orders, pending deliveries and automatic stock updates.
 
-Purchases
-Record supplier purchases and generate purchase orders.
+### Sales
+Invoices and receipts. Cash, card and M-Pesa payments. Taxes, discounts and promotions.
 
-Track pending deliveries and automatic stock updates.
+### Stock Transfers and Adjustments
+Move stock between branches or warehouses, and correct stock for losses or counting errors. Every change is logged with a reason and timestamp.
 
-Stock Transfer
-Transfer stock between stores or warehouses.
+### Tax Settings
+Configurable tax rates applied automatically to sales and purchases.
 
-Automatic logs with audit trail for transparency.
+### Payment Accounts
+Bank accounts, M-Pesa Till / Paybill and other payment accounts, with default accounts per transaction type.
 
-Sales / Sell
-Generate sales invoices and receipts.
+### Expenses
+One-time and recurring expenses by category.
 
-Accept cash, card, and M-Pesa payments.
+### Reports
+Sales, purchases, stock, expenses and user activity reports. Filter by date, product, branch or user. Export to PDF or Excel.
 
-Apply taxes, discounts, and promotions.
+### Backups
+Scheduled database backups, stored locally or on cloud storage.
 
-Tax Settings
-Configure tax rules and rates.
+### Notifications
+In-app alerts for sales, low stock and system events. Email and SMS are supported where configured.
 
-Automatically apply taxes on sales and purchases.
+---
 
-Payment Accounts
-Manage bank accounts, M-Pesa till/paybill numbers, and other gateways.
+## Wholesale & Credit Sales
 
-Configure default accounts for transactions.
+DantePOS supports retail and wholesale in the same system:
 
-Stock Adjustment
-Adjust stock quantities for corrections or losses.
+- Separate retail and wholesale price levels per product
+- Credit customers with credit limits and outstanding balances
+- Customer statements and payment history
+- Quotations, invoices and delivery notes
+- Partial payments, including split payments (for example part cash, part M-Pesa)
 
-Log reasons and timestamps for auditing purposes.
+---
 
-Reports
-Generate sales, purchases, stock, and user activity reports.
+## Hardware Support
 
-Filter by date, product, or user.
+- Thermal receipt printers (58mm and 80mm)
+- Barcode scanners
+- Cash drawers
+- Standard A4 invoice printing
 
-Export reports to PDF or Excel.
+---
 
-Backups
-Enable automatic backups locally or on AWS S3.
+## Security
 
-Schedule daily, weekly, or monthly backups.
+- Role-based access control for every module
+- Credentials stored in `.env`, never in the repository
+- Callback endpoints should validate the transaction before marking a sale paid, and ignore duplicate callbacks
+- Keep `APP_DEBUG=false` in production
+- Run behind HTTPS in production
+- Back up regularly and test restores
 
-Restore backups via system settings.
+Found a vulnerability? Please contact the author directly rather than opening a public issue.
 
-Expense Management
-Track and categorize business expenses.
+---
 
-Record one-time or recurring expenses.
+## Technical Details
 
-Notifications
-Receive real-time alerts for sales, low stock, or system events.
+- **Backend:** PHP / Laravel, MySQL
+- **Frontend:** JavaScript, Bootstrap, Blade templates
+- **Assets:** Laravel Mix (`webpack.mix.js`)
+- **Structure:** modular, so features can be added as separate modules
 
-Supports email, SMS, and in-app notifications.
+---
 
-Settings
-Configure system preferences, language, currency, and security settings.
+## Module Development & Addons
 
-Hardware Support
-Compatible with receipt printers, barcode scanners, and cash drawers.
+Features are organised so they can be extended without changing core files. Place new functionality in its own module or service class, register its routes and migrations, and keep configuration in `config/` rather than hardcoding values.
 
-Technical Details
-Built using PHP, MySQL, and JavaScript.
+---
 
-Frontend powered by Bootstrap 5 and Tailwind CSS.
+## Roadmap
 
-Modular structure allows adding custom addons and modules.
+**High priority**
 
-Other Features
-Tables, service staff, bookings, modifiers, kitchen modules (for restaurants).
+- [ ] Offline mode: PWA with a local sale queue that syncs when the connection returns
+- [ ] M-Pesa C2B Till / Paybill reconciliation
+- [ ] Idempotent M-Pesa callback handling and a pending-payments screen
+- [ ] Per-business M-Pesa credentials (encrypted) for multi-business setups
+- [ ] KRA eTIMS integration and KRA PIN on invoices
 
-Modules for salons, service centers, and other business types.
+**Planned**
 
-Custom payment methods and pay-via options.
+- [ ] SMS receipts, credit reminders and low-stock alerts (Africa's Talking)
+- [ ] Phone number normalisation to `2547XXXXXXXX`
+- [ ] Loyalty points tied to customer phone numbers
+- [ ] Swahili language support
+- [ ] Accounting exports (QuickBooks, Zoho Books, CSV)
+- [ ] Daily Z-report and cashier shift reports
+- [ ] Supplier purchase orders with reorder suggestions
+- [ ] Online ordering and WhatsApp order intake
+- [ ] Mobile app (iOS and Android)
 
-Module Development & Addons
-Available Addons:
+---
 
-Essentials & HRM Module
+## FAQ
 
-Asset Management Module
+**How do I integrate M-Pesa?**
+Add your Daraja credentials to `.env`, run the M-Pesa migrations, and configure your Till or Paybill. See [M-Pesa Integration](#m-pesa-integration).
 
-Accounting & Bookkeeping Module
+**Can I test M-Pesa without real money?**
+Yes. Use the Daraja sandbox credentials and a public tunnel URL for callbacks.
 
-Developers can create and extend modules using the modular structure.
+**How do I restore a backup?**
+Use the backup module under system settings.
 
-Frequently Asked Questions
-How to integrate M-Pesa? Configure paybill/till number and credentials in settings.
+**How do I create users and assign roles?**
+Use User Management and assign role-based permissions.
 
-How to restore backups? Use the backup module under system settings.
+**Does it work without internet?**
+Offline mode is on the roadmap. Currently the POS needs a connection to the server.
 
-How to create users and assign roles? Use the User Management module and assign role-based permissions.
+---
 
-Feature List
-Complete POS with M-Pesa integration
+## Release Notes
 
-Inventory, sales, purchases, and stock management
+- **V6.11:** Latest release. Includes the M-Pesa STK Push integration and Kenya-focused updates.
+- Earlier versions: M-Pesa, reporting, expense management and module improvements.
 
-Expense tracking, notifications, and reporting
+---
 
-Multi-store support and hardware integration
+## Contact & Support
 
-Modular addon system for easy expansion
+For setup, consultancy or support:
 
-Release Notes & Version Log
-V6.11 – Latest release
+- **WhatsApp / Phone:** +254712328150
+- **Telegram:** @dantechdevs
+- **Website:** [dantechdevelopers.com](https://dantechdevelopers.com)
 
-Previous versions include updates for M-Pesa, reporting, expense management, and modular addons.
+---
 
-Mobile App
-DantePOS mobile app available for iOS and Android.
-
-Syncs with web POS for real-time sales, inventory, and reporting.
-
-Contact & Support
-For full setup, consultancy, or support for DantePOS:
-
-WhatsApp: Click to Chat
-
-Phone: +254712328150
-
-Telegram: @dantechdevs
+## License
 
 © 2026 Dantechdevs. All rights reserved.
