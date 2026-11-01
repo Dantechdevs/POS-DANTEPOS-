@@ -30,6 +30,7 @@
 @else
     <script src="{{ asset('js/lang/en.js?v=' . $asset_v) }}"></script>
 @endif
+
 @php
     $business_date_format = session('business.date_format', config('constants.default_date_format'));
     $datepicker_date_format = str_replace('d', 'dd', $business_date_format);
@@ -113,9 +114,11 @@
         src="{{ asset('AdminLTE/plugins/select2/lang/' . session()->get('user.language', config('app.locale')) . '.js?v=' . $asset_v) }}">
     </script>
 @endif
+
 @php
     $validation_lang_file = 'messages_' . session()->get('user.language', config('app.locale')) . '.js';
 @endphp
+
 @if (file_exists(public_path() . '/js/jquery-validation-1.16.0/src/localization/' . $validation_lang_file))
     <script src="{{ asset('js/jquery-validation-1.16.0/src/localization/' . $validation_lang_file . '?v=' . $asset_v) }}">
     </script>
@@ -124,11 +127,30 @@
 @if (!empty($__system_settings['additional_js']))
     {!! $__system_settings['additional_js'] !!}
 @endif
+
 @yield('javascript')
 
 @if (Module::has('Essentials'))
     @includeIf('essentials::layouts.partials.footer_part')
 @endif
+
+
+{{-- ===================================================== --}}
+{{-- M-PESA STK PUSH PLUGIN SCRIPTS (DantePOS) --}}
+{{-- ===================================================== --}}
+<script type="text/javascript">
+    window.MPESA_CONFIG = {
+        enabled: "{{ config('constants.mpesa.enabled') ? 'true' : 'false' }}",
+        environment: "{{ config('constants.mpesa.environment', 'sandbox') }}",
+        callback_url: "{{ config('constants.mpesa.callback_url') }}",
+        base_path: "{{ url('/') }}",
+        csrf_token: "{{ csrf_token() }}"
+    };
+</script>
+
+{{-- Load Mpesa JS plugin --}}
+<script src="{{ asset('plugins/mpesa/mpesa.js?v=' . $asset_v) }}"></script>
+
 
 <script type="text/javascript">
     $(document).ready(function() {
@@ -144,7 +166,8 @@
             locale: locale,
             isRTL: isRTL
         });
-        // side bar toggle  
+
+        // side bar toggle
         $(".drop_down").click(function(event) {
             event.preventDefault();
             var $chiled = $(this).next(".chiled");
@@ -201,7 +224,7 @@
                     }
                 });
             });
-            
+
         });
 
         $('.side-bar-collapse').click(function() {
@@ -210,12 +233,10 @@
 
         $('.dt-buttons.btn-group').find('a.btn').removeClass('btn-default');
         $('.dt-buttons.btn-group').find('a.btn').removeClass('btn');
-        
+
         // $('.date_range').on('show.daterangepicker', function (ev, picker) {
         //     $(picker.container).insertAfter($(this));
         // });
-   
+
     });
 </script>
-
-

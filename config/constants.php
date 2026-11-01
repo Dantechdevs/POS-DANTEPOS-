@@ -6,7 +6,7 @@ return [
     |--------------------------------------------------------------------------
     | App Constants
     |--------------------------------------------------------------------------
-    |List of all constants for the app
+    | List of all constants for the app
     */
 
     'langs' => [
@@ -27,6 +27,7 @@ return [
         'ro' => ['full_name' => 'Romanian', 'short_name' => 'Romanian'],
         'lo' => ['full_name' => 'Lao', 'short_name' => 'Lao'],
     ],
+
     'langs_rtl' => ['ar'],
     'non_utf8_languages' => ['ar', 'hi', 'ps'],
 
@@ -61,12 +62,14 @@ return [
     'google_recaptcha_key' => env('GOOGLE_RECAPTCHA_KEY'),
     'google_recaptcha_secret' => env('GOOGLE_RECAPTCHA_SECRET'),
     'enable_recaptcha' => env('ENABLE_RECAPTCHA', false),
+
     // Enable disposable email validation (public registration)
     'do_not_allow_disposable_email' => env('DO_NOT_ALLOW_DISPOSABLE_EMAIL', false),
-    
+
     'mpdf_temp_path' => storage_path('app/pdf'), //Temporary path used by mpdf
 
-    'document_upload_mimes_types' => ['application/pdf' => '.pdf',
+    'document_upload_mimes_types' => [
+        'application/pdf' => '.pdf',
         'text/csv' => '.csv',
         'application/zip' => '.zip',
         'application/msword' => '.doc',
@@ -74,20 +77,41 @@ return [
         'image/jpeg' => '.jpeg',
         'image/jpg' => '.jpg',
         'image/png' => '.png',
-
     ], //List of MIME type: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+
     'show_report_606' => false,
     'show_report_607' => false,
+
     'whatsapp_base_url' => 'https://wa.me',
+
     'enable_crm_call_log' => false,
     'enable_product_bulk_edit' => false,  //Will be depreciated in future
     'enable_convert_draft_to_invoice' => false, //Experimental beta feature.
     'enable_download_pdf' => false,         //Experimental feature
+
     'invoice_scheme_separator' => '-',
+
     'show_payments_recovered_today' => false, //Displays payment recovered today table on dashboard
+
     'enable_b2b_marketplace' => false,
+
     'enable_contact_assign' => true, //Used in add/edit contacts screen
+
     'show_payment_type_on_contact_pay' => false,
+
     'enable_gst_report_india' => env('ENABLE_GST_REPORT_INDIA', false),
+
     'enable_secondary_unit' => false, //Experimental feature, may depreciate
+
+    'mpesa' => [
+        'enabled' => env('MPESA_ENABLED', true),
+        'environment' => env('MPESA_ENV', 'sandbox'),
+        'consumer_key' => env('MPESA_CONSUMER_KEY'),
+        'consumer_secret' => env('MPESA_CONSUMER_SECRET'),
+        'shortcode' => env('MPESA_SHORTCODE'),
+        'passkey' => env('MPESA_PASSKEY'),
+        'transaction_type' => env('MPESA_TRANSACTION_TYPE', 'CustomerBuyGoodsOnline'),
+        'callback_url' => env('MPESA_CALLBACK_URL'),
+    ],
+
 ];

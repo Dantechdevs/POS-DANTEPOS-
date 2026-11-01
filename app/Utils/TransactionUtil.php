@@ -759,6 +759,10 @@ class TransactionUtil extends Util
                         'card_security' => isset($payment['card_security']) ? $payment['card_security'] : null,
                         'cheque_number' => isset($payment['cheque_number']) ? $payment['cheque_number'] : null,
                         'bank_account_number' => isset($payment['bank_account_number']) ? $payment['bank_account_number'] : null,
+                        'mpesa_phone' => isset($payment['mpesa_phone']) ? $payment['mpesa_phone'] : null,
+                        'mpesa_receipt_number' => isset($payment['mpesa_receipt_number']) ? $payment['mpesa_receipt_number'] : null,
+                        'mpesa_checkout_request_id' => isset($payment['mpesa_checkout_request_id']) ? $payment['mpesa_checkout_request_id'] : null,
+                        'mpesa_merchant_request_id' => isset($payment['mpesa_merchant_request_id']) ? $payment['mpesa_merchant_request_id'] : null,
                         'note' => isset($payment['note']) ? $payment['note'] : null,
                         'paid_on' => $paid_on,
                         'created_by' => empty($user_id) ? auth()->user()->id : $user_id,
@@ -1542,6 +1546,12 @@ class TransactionUtil extends Util
                         } elseif ($value['method'] == 'cheque') {
                             $output['payments'][] =
                                 ['method' => $method.(! empty($value['cheque_number']) ? (', Cheque Number:'.$value['cheque_number']) : ''),
+                                    'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
+                                    'date' => $this->format_date($value['paid_on'], false, $business_details),
+                                ];
+                        } elseif ($value['method'] == 'mpesa') {
+                            $output['payments'][] =
+                                ['method' => $method.(! empty($value['mpesa_receipt_number']) ? (', Receipt: '.$value['mpesa_receipt_number']) : ''),
                                     'amount' => $this->num_f($value['amount'], $show_currency, $business_details),
                                     'date' => $this->format_date($value['paid_on'], false, $business_details),
                                 ];

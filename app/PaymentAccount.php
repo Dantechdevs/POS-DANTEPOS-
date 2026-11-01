@@ -11,9 +11,13 @@ class PaymentAccount extends Model
 
     public static function account_types()
     {
-        return ['cash' => trans('lang_v1.cash'), 'card' => trans('lang_v1.card'),
-            'cheque' => trans('lang_v1.cheque'), 'bank_transfer' => trans('lang_v1.bank_transfer'),
-            'payment_gateway' => trans('lang_v1.payment_gateway'), 'other' => trans('lang_v1.other'),
+        return [
+            'cash' => trans('lang_v1.cash'),
+            'card' => trans('lang_v1.card'),
+            'cheque' => trans('lang_v1.cheque'),
+            'bank_transfer' => trans('lang_v1.bank_transfer'),
+            'payment_gateway' => trans('lang_v1.payment_gateway'),
+            'other' => trans('lang_v1.other'),
         ];
     }
 

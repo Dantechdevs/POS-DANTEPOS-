@@ -31,6 +31,7 @@ use App\Http\Controllers\LabelsController;
 use App\Http\Controllers\LedgerDiscountController;
 use App\Http\Controllers\LocationSettingsController;
 use App\Http\Controllers\ManageUserController;
+use App\Http\Controllers\MpesaController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\NotificationTemplateController;
 use App\Http\Controllers\OpeningStockController;
@@ -95,11 +96,15 @@ Route::middleware(['setData'])->group(function () {
         ->name('invoice_payment');
     Route::post('/confirm-payment/{id}', [SellPosController::class, 'confirmPayment'])
         ->name('confirm_payment');
+
+    Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpesa.callback');
 });
 
 //Routes for authenticated users only
 Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 'AdminSidebarMenu', 'CheckUserLogin'])->group(function () {
     Route::get('pos/payment/{id}', [SellPosController::class, 'edit'])->name('edit-pos-payment');
+    Route::post('mpesa/stkpush', [MpesaController::class, 'initiate'])->name('mpesa.stkpush');
+    Route::get('mpesa/status/{checkoutRequestId}', [MpesaController::class, 'status'])->name('mpesa.status');
     Route::get('service-staff-availability', [SellPosController::class, 'showServiceStaffAvailibility']);
     Route::get('pause-resume-service-staff-timer/{user_id}', [SellPosController::class, 'pauseResumeServiceStaffTimer']);
     Route::get('mark-as-available/{user_id}', [SellPosController::class, 'markAsAvailable']);
