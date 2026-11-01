@@ -29,4 +29,14 @@ return [
         'callback_url' => env('MPESA_CALLBACK_URL'),
     ],
 
+    'africastalking' => [
+        'env' => env('AT_ENV', 'sandbox'),
+        'username' => env('AT_USERNAME', 'sandbox'),
+        'api_key' => env('AT_API_KEY'),
+        'sender_id' => env('AT_SENDER_ID'),
+    ],
+
+    'daily_summary' => [
+        'to' => env('DAILY_SUMMARY_TO'),
+    ],
 ];

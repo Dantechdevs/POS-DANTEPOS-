@@ -15,6 +15,8 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('report:daily-summary')->dailyAt('21:00')->timezone('Africa/Nairobi');
+
         $schedule->command('debts:remind')->dailyAt('09:00');
         $env = config('app.env');
         $email = config('mail.username');
