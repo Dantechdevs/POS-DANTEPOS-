@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('debts:remind')->dailyAt('09:00');
         $env = config('app.env');
         $email = config('mail.username');
 
