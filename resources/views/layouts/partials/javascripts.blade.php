@@ -150,6 +150,7 @@
 
 {{-- Load Mpesa JS plugin --}}
 <script src="{{ asset('plugins/mpesa/mpesa.js?v=' . $asset_v) }}"></script>
+<script src="{{ asset('plugins/mpesa/paydue-mpesa.js?v=' . $asset_v) }}"></script>
 
 
 <script type="text/javascript">
