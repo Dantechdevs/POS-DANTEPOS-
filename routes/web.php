@@ -97,13 +97,13 @@ Route::middleware(['setData'])->group(function () {
     Route::post('/confirm-payment/{id}', [SellPosController::class, 'confirmPayment'])
         ->name('confirm_payment');
 
-    Route::post('/mpesa/callback', [MpesaController::class, 'callback'])->name('mpesa.callback');
+    Route::post('/mpesa/callback/{secret}', [MpesaController::class, 'callback'])->name('mpesa.callback');
 });
 
 //Routes for authenticated users only
 Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 'AdminSidebarMenu', 'CheckUserLogin'])->group(function () {
     Route::get('pos/payment/{id}', [SellPosController::class, 'edit'])->name('edit-pos-payment');
-    Route::post('mpesa/stkpush', [MpesaController::class, 'initiate'])->name('mpesa.stkpush');
+    Route::post('mpesa/stkpush', [MpesaController::class, 'initiate'])->middleware('throttle:10,1')->name('mpesa.stkpush');
     Route::get('mpesa/status/{checkoutRequestId}', [MpesaController::class, 'status'])->name('mpesa.status');
     Route::get('service-staff-availability', [SellPosController::class, 'showServiceStaffAvailibility']);
     Route::get('pause-resume-service-staff-timer/{user_id}', [SellPosController::class, 'pauseResumeServiceStaffTimer']);

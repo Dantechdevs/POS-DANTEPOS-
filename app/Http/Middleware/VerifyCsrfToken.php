@@ -12,6 +12,7 @@ class VerifyCsrfToken extends BaseVerifier
      * @var array
      */
     protected $except = [
+        'mpesa/callback/*',
         '/install/details',
         '/install/post-details',
         '/install/install-alternate',
