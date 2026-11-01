@@ -372,6 +372,14 @@ class SellPosController extends Controller
             if (!empty($input['products'])) {
                 $business_id = $request->session()->get('user.business_id');
 
+        if ($msg = \App\Utils\CreditGuard::walkInCreditViolation($request, $business_id)) {
+            $output = ['success' => 0, 'msg' => $msg];
+
+            return ($request->ajax() || $request->wantsJson())
+                ? response()->json($output)
+                : redirect()->back()->with('status', $output)->withInput();
+        }
+
                 //Check if subscribed or not, then check for users quota
                 if (!$this->moduleUtil->isSubscribed($business_id)) {
                     return $this->moduleUtil->expiredResponse();
