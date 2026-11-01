@@ -280,6 +280,14 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/customer-supplier', [ReportController::class, 'getCustomerSuppliers']);
     Route::get('/reports/debtors-aging', [\App\Http\Controllers\DebtorsAgingController::class, 'index'])->name('reports.debtors_aging');
     Route::get('/reports/mpesa-reconciliation', [\App\Http\Controllers\MpesaReconciliationController::class, 'index'])->name('reports.mpesa_reconciliation');
+    Route::get('/stocktakes', [\App\Http\Controllers\StocktakeController::class, 'index'])->name('stocktakes.index');
+    Route::post('/stocktakes', [\App\Http\Controllers\StocktakeController::class, 'store'])->name('stocktakes.store');
+    Route::get('/stocktakes/{id}', [\App\Http\Controllers\StocktakeController::class, 'show'])->name('stocktakes.show');
+    Route::post('/stocktakes/{id}/counts', [\App\Http\Controllers\StocktakeController::class, 'saveCounts'])->name('stocktakes.counts');
+    Route::get('/stocktakes/{id}/export', [\App\Http\Controllers\StocktakeController::class, 'export'])->name('stocktakes.export');
+    Route::post('/stocktakes/{id}/import', [\App\Http\Controllers\StocktakeController::class, 'import'])->name('stocktakes.import');
+    Route::post('/stocktakes/{id}/apply', [\App\Http\Controllers\StocktakeController::class, 'apply'])->name('stocktakes.apply');
+    Route::post('/stocktakes/{id}/cancel', [\App\Http\Controllers\StocktakeController::class, 'cancel'])->name('stocktakes.cancel');
     Route::get('/reports/stock-report', [ReportController::class, 'getStockReport']);
     Route::get('/reports/stock-details', [ReportController::class, 'getStockDetails']);
     Route::get('/reports/tax-report', [ReportController::class, 'getTaxReport']);
