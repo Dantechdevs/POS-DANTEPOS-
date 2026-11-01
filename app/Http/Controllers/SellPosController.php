@@ -1216,6 +1216,14 @@ class SellPosController extends Controller
                 }
 
                 $business_id = $request->session()->get('user.business_id');
+
+            if ($msg = \App\Utils\CreditGuard::violation($request, $business_id)) {
+                $output = ['success' => 0, 'msg' => $msg];
+
+                return ($request->ajax() || $request->wantsJson())
+                    ? response()->json($output)
+                    : redirect()->back()->with('status', $output)->withInput();
+            }
                 $user_id = $request->session()->get('user.id');
                 $commsn_agnt_setting = $request->session()->get('business.sales_cmsn_agnt');
 
