@@ -279,6 +279,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/purchase-sell', [ReportController::class, 'getPurchaseSell']);
     Route::get('/reports/customer-supplier', [ReportController::class, 'getCustomerSuppliers']);
     Route::get('/reports/debtors-aging', [\App\Http\Controllers\DebtorsAgingController::class, 'index'])->name('reports.debtors_aging');
+    Route::get('/reports/mpesa-reconciliation', [\App\Http\Controllers\MpesaReconciliationController::class, 'index'])->name('reports.mpesa_reconciliation');
     Route::get('/reports/stock-report', [ReportController::class, 'getStockReport']);
     Route::get('/reports/stock-details', [ReportController::class, 'getStockDetails']);
     Route::get('/reports/tax-report', [ReportController::class, 'getTaxReport']);
