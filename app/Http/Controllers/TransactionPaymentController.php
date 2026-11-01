@@ -545,7 +545,24 @@ class TransactionPaymentController extends Controller
             DB::beginTransaction();
 
             $business_id = request()->session()->get('business.id');
+            $mpesa_claim = null;
+            if ($request->input('method') === 'mpesa') {
+                $mpesa_claim = \App\Services\MpesaPaymentGuard::claimForDuePayment(
+                    (string) $request->input('pd_mpesa_checkout_request_id'),
+                    (float) $this->transactionUtil->num_uf($request->input('amount')),
+                    (int) $business_id
+                );
+            }
+
             $tp = $this->transactionUtil->payContact($request);
+
+            if ($mpesa_claim) {
+                $tp->forceFill([
+                    'mpesa_phone' => $mpesa_claim->phone,
+                    'mpesa_receipt_number' => $mpesa_claim->mpesa_receipt_number,
+                    'mpesa_checkout_request_id' => $mpesa_claim->checkout_request_id,
+                ])->save();
+            }
 
             $pos_settings = ! empty(session()->get('business.pos_settings')) ? json_decode(session()->get('business.pos_settings'), true) : [];
             $enable_cash_denomination_for_payment_methods = ! empty($pos_settings['enable_cash_denomination_for_payment_methods']) ? $pos_settings['enable_cash_denomination_for_payment_methods'] : [];
