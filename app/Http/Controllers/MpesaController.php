@@ -177,7 +177,7 @@ class MpesaController extends Controller
     {
         $accepted = response()->json(['ResultCode' => 0, 'ResultDesc' => 'Accepted']);
 
-        $expected = (string) config('mpesa.callback_secret');
+        $expected = (string) config('services.mpesa.callback_secret');
         if ($expected === '' || !hash_equals($expected, (string) $secret)) {
             Log::warning('M-Pesa callback rejected: invalid secret.');
 
