@@ -121,6 +121,25 @@
 </div>
 
 
+{{-- GIFT CARD PAYMENT DETAILS --}}
+<div class="payment_details_div @if( $payment_line['method'] !== 'gift_card' ) {{ 'hide' }} @endif" data-type="gift_card" >
+        <div class="col-md-6">
+                <div class="form-group">
+                        <label for="giftcard_code_{{ $row_index }}">Gift Card Code</label>
+                        <input type="text" name="payment[{{ $row_index }}][gift_card_code]" id="giftcard_code_{{ $row_index }}" class="form-control" placeholder="GC-XXXX-XXXX-XX" autocomplete="off">
+                </div>
+        </div>
+        <div class="col-md-6">
+                <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn btn-info btn-block giftcard-check-btn" data-row-index="{{ $row_index }}"><i class="fa fa-search"></i> Check Balance</button>
+                </div>
+        </div>
+        <div class="clearfix"></div>
+        <div class="col-md-12"><div class="alert alert-info hide" id="giftcard_status_{{ $row_index }}"></div></div>
+        <div class="clearfix"></div>
+</div>
+
 @for ($i = 1; $i < 8; $i++)
 <div class="payment_details_div @if( $payment_line['method'] !== 'custom_pay_' . $i ) {{ 'hide' }} @endif" data-type="custom_pay_{{$i}}" >
 	<div class="col-md-12">
