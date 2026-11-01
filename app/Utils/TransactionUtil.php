@@ -1964,6 +1964,29 @@ class TransactionUtil extends Util
         $output['design'] = $il->design;
         $output['table_tax_headings'] = ! empty($il->table_tax_headings) ? array_filter(json_decode($il->table_tax_headings), 'strlen') : null;
 
+        // pd_points: print reward points earned and balance on the receipt
+        if (! empty($business_details->enable_rp) && (isset($il) && is_object($il) ? (int) $il->show_reward_point : 1) === 1) {
+            $pd_contact = \Illuminate\Support\Facades\DB::table('contacts')->where('id', $transaction->contact_id)->first(['is_default', 'total_rp']);
+            if ($pd_contact && empty($pd_contact->is_default)) {
+                $pd_name = $business_details->rp_name ?: 'Points';
+                $pd_earned = (float) $transaction->rp_earned;
+                $pd_balance = (float) $pd_contact->total_rp;
+                $pd_fmt = function ($n) {
+                    return rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.') ?: '0';
+                };
+                $pd_bits = [];
+                if ($pd_earned > 0) {
+                    $pd_bits[] = $pd_name.' earned: '.$pd_fmt($pd_earned);
+                }
+                if ($pd_balance > 0 || $pd_earned > 0) {
+                    $pd_bits[] = 'Balance: '.$pd_fmt($pd_balance).' (worth KSh '.$pd_fmt($pd_balance * (float) $business_details->redeem_amount_per_unit_rp).')';
+                }
+                if (! empty($pd_bits)) {
+                    $output['footer_text'] = ($output['footer_text'] ?? '').'<br><strong>'.implode(' | ', $pd_bits).'</strong>';
+                }
+            }
+        }
+
         return (object) $output;
     }
 
