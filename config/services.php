@@ -20,7 +20,6 @@ return [
 
     'mpesa' => [
         'callback_secret' => env('MPESA_CALLBACK_SECRET'),
-        'callback_secret' => env('MPESA_CALLBACK_SECRET'),
         'env' => env('MPESA_ENV', 'sandbox'),
         'consumer_key' => env('MPESA_CONSUMER_KEY'),
         'consumer_secret' => env('MPESA_CONSUMER_SECRET'),
