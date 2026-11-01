@@ -1,3 +1,12 @@
+@if(!empty($contact->id) && ($contact->type ?? '') != 'supplier')
+<div class="row">
+    <div class="col-md-12 text-right" style="margin-bottom: 10px;">
+        <a href="{{ url('/contacts/' . $contact->id . '/whatsapp-statement') }}" target="_blank" class="btn btn-success btn-sm">
+            <i class="fab fa-whatsapp"></i> WhatsApp Statement
+        </a>
+    </div>
+</div>
+@endif
 @php
     $transaction_types = [];
     if(in_array($contact->type, ['both', 'supplier'])){
