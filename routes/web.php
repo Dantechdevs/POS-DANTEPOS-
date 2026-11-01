@@ -278,6 +278,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/get-opening-stock', [ReportController::class, 'getOpeningStock']);
     Route::get('/reports/purchase-sell', [ReportController::class, 'getPurchaseSell']);
     Route::get('/reports/customer-supplier', [ReportController::class, 'getCustomerSuppliers']);
+    Route::get('/reports/debtors-aging', [\App\Http\Controllers\DebtorsAgingController::class, 'index'])->name('reports.debtors_aging');
     Route::get('/reports/stock-report', [ReportController::class, 'getStockReport']);
     Route::get('/reports/stock-details', [ReportController::class, 'getStockDetails']);
     Route::get('/reports/tax-report', [ReportController::class, 'getTaxReport']);
