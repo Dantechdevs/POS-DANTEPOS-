@@ -88,7 +88,7 @@ class DailySalesSummary extends Command
 
         $collected = $payments->select('method', DB::raw('SUM(amount) as total'))->groupBy('method')->pluck('total', 'method');
 
-        $labels = ['cash' => 'Cash', 'mpesa' => 'M-Pesa', 'card' => 'Card', 'bank_transfer' => 'Bank', 'cheque' => 'Cheque'];
+        $labels = ['cash' => 'Cash', 'mpesa' => 'M-Pesa', 'card' => 'Card', 'bank_transfer' => 'Bank', 'custom_pay_1' => 'GiftCard', 'cheque' => 'Cheque'];
         $grouped = [];
         foreach ($collected as $method => $total) {
             $label = $labels[$method] ?? 'Other';
