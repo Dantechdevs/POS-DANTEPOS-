@@ -5,37 +5,36 @@ namespace App\Observers;
 use App\Services\GiftCardService;
 use App\TransactionPayment;
 
+/**
+ * Runs inside the sale's database transaction, so a bad gift card code or balance
+ * rolls the whole sale back and nothing is charged.
+ */
 class GiftCardPaymentObserver
 {
-    private function applies(TransactionPayment $tp): bool
+    public function created(TransactionPayment $payment): void
     {
-        return $tp->method === 'gift_card' && empty($tp->is_return) && ! empty($tp->transaction_id);
-    }
+        $svc = app(GiftCardService::class);
 
-    public function created(TransactionPayment $tp)
-    {
-        if ($this->applies($tp)) {
-            GiftCardService::redeem($tp, (float) $tp->amount);
+        if ($svc->isGiftPayment($payment)) {
+            $svc->syncPayment($payment);
         }
     }
 
-    public function updated(TransactionPayment $tp)
+    public function updated(TransactionPayment $payment): void
     {
-        if (! $this->applies($tp) || ! $tp->wasChanged('amount')) {
-            return;
-        }
-        $diff = round((float) $tp->amount - (float) $tp->getOriginal('amount'), 4);
-        if ($diff > 0) {
-            GiftCardService::redeem($tp, $diff);
-        } elseif ($diff < 0) {
-            GiftCardService::restore($tp, -$diff, 'Sale payment reduced');
+        $svc = app(GiftCardService::class);
+
+        if ($svc->method() !== null) {
+            $svc->syncPayment($payment);
         }
     }
 
-    public function deleted(TransactionPayment $tp)
+    public function deleted(TransactionPayment $payment): void
     {
-        if ($this->applies($tp)) {
-            GiftCardService::restore($tp, (float) $tp->amount, 'Sale payment deleted');
+        $svc = app(GiftCardService::class);
+
+        if ($svc->method() !== null) {
+            $svc->syncPayment($payment, true);
         }
     }
 }

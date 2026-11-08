@@ -48,4 +48,9 @@ return [
         'till_method' => env('OFFLINE_TILL_METHOD'),
         'till_label' => env('OFFLINE_TILL_LABEL', 'M-Pesa Till'),
     ],
+    'gift_card' => [
+        // The custom payment slot (custom_pay_1 .. custom_pay_7) that means "paid with a gift card". Empty = switched off.
+        'method' => env('GIFT_CARD_METHOD'),
+        'prefix' => env('GIFT_CARD_PREFIX', 'GC'),
+    ],
 ];
