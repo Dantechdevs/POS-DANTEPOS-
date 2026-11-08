@@ -299,6 +299,10 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/stocktakes/{id}/import', [\App\Http\Controllers\StocktakeController::class, 'import'])->name('stocktakes.import');
     Route::post('/stocktakes/{id}/apply', [\App\Http\Controllers\StocktakeController::class, 'apply'])->name('stocktakes.apply');
     Route::post('/stocktakes/{id}/cancel', [\App\Http\Controllers\StocktakeController::class, 'cancel'])->name('stocktakes.cancel');
+    Route::get('/offline-pos', [\App\Http\Controllers\OfflinePosController::class, 'page'])->name('offline.pos');
+    Route::get('/offline/catalog', [\App\Http\Controllers\OfflinePosController::class, 'catalog'])->name('offline.catalog');
+    Route::get('/offline/token', [\App\Http\Controllers\OfflinePosController::class, 'token'])->name('offline.token');
+    Route::post('/offline/sync', [\App\Http\Controllers\OfflinePosController::class, 'sync'])->name('offline.sync');
     Route::get('/reports/stock-report', [ReportController::class, 'getStockReport']);
     Route::get('/reports/stock-details', [ReportController::class, 'getStockDetails']);
     Route::get('/reports/tax-report', [ReportController::class, 'getTaxReport']);

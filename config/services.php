@@ -39,4 +39,13 @@ return [
     'daily_summary' => [
         'to' => env('DAILY_SUMMARY_TO'),
     ],
+    'sms_receipt' => [
+        'enabled' => env('SMS_RECEIPT_ENABLED', false),
+        'mode' => env('SMS_RECEIPT_MODE', 'all'), // all, or credit (only sales with a balance)
+    ],
+    'offline_pos' => [
+        // Optional: the custom payment slot used for "customer paid to our M-Pesa till" (custom_pay_1 .. custom_pay_7).
+        'till_method' => env('OFFLINE_TILL_METHOD'),
+        'till_label' => env('OFFLINE_TILL_LABEL', 'M-Pesa Till'),
+    ],
 ];
