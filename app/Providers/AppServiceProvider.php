@@ -29,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        \Illuminate\Support\Facades\Event::listen(\App\Events\TransactionPaymentDeleted::class, \App\Listeners\RefundGiftCardOnPaymentDeleted::class);
         \Illuminate\Support\Facades\Event::listen(\App\Events\SellCreatedOrModified::class, \App\Listeners\SendSmsReceipt::class);
 
         \App\Transaction::observe(\App\Observers\EtimsSaleObserver::class);
