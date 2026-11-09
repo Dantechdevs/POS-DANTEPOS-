@@ -116,6 +116,30 @@
 			Waiting for customer confirmation...
 		</div>
 	</div>
+    @php
+        $mpesa_cfg = \App\Services\MpesaSettings::forBusiness((int) session('user.business_id'));
+    @endphp
+    @if($mpesa_cfg->manual_enabled)
+    <div class="col-md-12">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" class="mpesa-manual-toggle" name="payment[{{ $row_index }}][mpesa_manual]" value="1" data-row-index="{{ $row_index }}">
+                Customer already paid (STK not possible) &ndash; enter the M-Pesa code by hand
+            </label>
+        </div>
+        <div class="mpesa-manual-box hide" id="mpesa_manual_box_{{ $row_index }}">
+            <div class="form-group">
+                <label for="mpesa_manual_receipt_{{ $row_index }}">M-Pesa code from the customer's confirmation SMS</label>
+                <input type="text" name="payment[{{ $row_index }}][mpesa_manual_receipt]" id="mpesa_manual_receipt_{{ $row_index }}"
+                       class="form-control mpesa-manual-receipt" maxlength="10" placeholder="e.g. SGH7K2L9QX" autocomplete="off">
+                <small class="text-muted">
+                    Customer pays <b>{{ \App\Services\MpesaSettings::payTo($mpesa_cfg) }}</b>. The phone number above must be the number that paid.
+                    This payment is saved as <b>unverified</b> until a manager checks it against the M-Pesa statement.
+                </small>
+            </div>
+        </div>
+    </div>
+    @endif
 
 	<div class="clearfix"></div>
 </div>

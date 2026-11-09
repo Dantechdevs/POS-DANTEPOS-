@@ -280,6 +280,11 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/customer-supplier', [ReportController::class, 'getCustomerSuppliers']);
     Route::get('/reports/debtors-aging', [\App\Http\Controllers\DebtorsAgingController::class, 'index'])->name('reports.debtors_aging');
     Route::get('/reports/mpesa-reconciliation', [\App\Http\Controllers\MpesaReconciliationController::class, 'index'])->name('reports.mpesa_reconciliation');
+    Route::post('/mpesa/manual/{id}/verify', [\App\Http\Controllers\MpesaReconciliationController::class, 'verify'])->whereNumber('id')->name('mpesa.manual.verify');
+    Route::post('/mpesa/manual/{id}/reject', [\App\Http\Controllers\MpesaReconciliationController::class, 'reject'])->whereNumber('id')->name('mpesa.manual.reject');
+    Route::post('/mpesa/statement-import', [\App\Http\Controllers\MpesaReconciliationController::class, 'importStatement'])->name('mpesa.statement.import');
+    Route::get('/mpesa/settings', [\App\Http\Controllers\MpesaSettingsController::class, 'edit'])->name('mpesa.settings');
+    Route::post('/mpesa/settings', [\App\Http\Controllers\MpesaSettingsController::class, 'update'])->name('mpesa.settings.update');
     Route::get('/reports/payables-aging', [\App\Http\Controllers\PayablesAgingController::class, 'index'])->name('reports.payables_aging');
     Route::get('/reports/reorder', [\App\Http\Controllers\ReorderController::class, 'index'])->name('reports.reorder');
     Route::get('/reports/expiry-watch', [\App\Http\Controllers\ExpiryWatchController::class, 'index'])->name('reports.expiry_watch');

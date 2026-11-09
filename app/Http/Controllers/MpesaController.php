@@ -88,7 +88,7 @@ class MpesaController extends Controller
             // AccountReference is limited to 12 characters by Daraja.
             $reference = 'POS' . strtoupper(Str::random(8));
 
-            $result = $this->mpesaService->stkPush($phone, $amount, $reference, 'POS Sale');
+            $result = $this->mpesaService->forBusiness($business_id)->stkPush($phone, $amount, $reference, 'POS Sale');
 
             if (!isset($result['CheckoutRequestID'])) {
                 return response()->json([
@@ -145,7 +145,7 @@ class MpesaController extends Controller
             && $transaction->created_at->diffInSeconds(now()) >= self::QUERY_AFTER_SECONDS
             && method_exists($this->mpesaService, 'stkQuery')) {
             try {
-                $query = $this->mpesaService->stkQuery($transaction->checkout_request_id);
+                $query = $this->mpesaService->forBusiness($business_id)->stkQuery($transaction->checkout_request_id);
 
                 // While Safaricom is still processing, the response has no ResultCode.
                 if (isset($query['ResultCode'])) {

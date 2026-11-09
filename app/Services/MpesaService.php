@@ -11,6 +11,7 @@ class MpesaService
     protected $client;
     protected $baseUrl;
     protected $config;
+    protected $account;
 
     public function __construct()
     {
@@ -24,6 +25,20 @@ class MpesaService
             'timeout' => 20,
             'connect_timeout' => 8,
         ]);
+    }
+
+    /** A copy of this service that uses one business's Paybill/Till settings. */
+    public function forBusiness($businessId): self
+    {
+        $clone = clone $this;
+        $clone->account = MpesaSettings::forBusiness((int) $businessId);
+
+        return $clone;
+    }
+
+    protected function shortcode()
+    {
+        return $this->account ? $this->account->shortcode : $this->config['shortcode'];
     }
 
     public function getAccessToken()
@@ -59,18 +74,25 @@ class MpesaService
             throw new \Exception('Unable to authenticate with M-Pesa. Check your consumer key/secret.');
         }
 
-        $shortcode = $this->config['shortcode'];
+        $shortcode = $this->shortcode();
         $timestamp = $this->timestamp();
         $password = base64_encode($shortcode . $this->config['passkey'] . $timestamp);
+
+        // With saved settings the account type decides the transaction type and PartyB;
+        // without them the old .env values are used unchanged.
+        $transactionType = ($this->account && $this->account->account_type)
+            ? MpesaSettings::transactionType($this->account)
+            : $this->config['transaction_type'];
+        $partyB = $this->account ? MpesaSettings::partyB($this->account) : $shortcode;
 
         $payload = [
             'BusinessShortCode' => $shortcode,
             'Password' => $password,
             'Timestamp' => $timestamp,
-            'TransactionType' => $this->config['transaction_type'],
+            'TransactionType' => $transactionType,
             'Amount' => (int) round($amount),
             'PartyA' => $this->normalizePhone($phone),
-            'PartyB' => $shortcode,
+            'PartyB' => $partyB,
             'PhoneNumber' => $this->normalizePhone($phone),
             'CallBackURL' => $this->config['callback_url'],
             'AccountReference' => substr($accountReference, 0, 12),
@@ -104,7 +126,7 @@ class MpesaService
             throw new \Exception('Unable to authenticate with M-Pesa.');
         }
 
-        $shortcode = $this->config['shortcode'];
+        $shortcode = $this->shortcode();
         $timestamp = $this->timestamp();
         $password = base64_encode($shortcode . $this->config['passkey'] . $timestamp);
 

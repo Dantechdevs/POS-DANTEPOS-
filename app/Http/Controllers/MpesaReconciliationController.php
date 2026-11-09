@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\MpesaStatementImporter;
 
 class MpesaReconciliationController extends Controller
 {
@@ -26,9 +27,19 @@ class MpesaReconciliationController extends Controller
             ->whereBetween('m.created_at', [$from, $to]);
 
         $map = fn ($m) => [
+            'id' => $m->id ?? null,
             'date' => $m->created_at, 'phone' => $m->phone, 'amount' => $m->amount,
             'receipt' => $m->mpesa_receipt_number, 'detail' => $m->result_desc, 'checkout' => $m->checkout_request_id,
         ];
+
+        $manual = (clone $base)->where('m.status', 'manual')->orderBy('m.created_at')->get()->map(function ($m) {
+            return [
+                'id' => $m->id, 'date' => $m->created_at, 'phone' => $m->phone, 'amount' => $m->amount,
+                'receipt' => $m->mpesa_receipt_number, 'checkout' => null,
+                'detail' => 'Typed at the till'.($m->transaction_id ? ' (sale #'.$m->transaction_id.')' : '')
+                    .(\Carbon\Carbon::parse($m->created_at)->lt(now()->subDay()) ? ' - OVER 24 HOURS, not yet verified' : ''),
+            ];
+        })->all();
 
         $review = (clone $base)->where('m.status', 'review')->orderByDesc('m.created_at')->get()->map($map)->all();
 
@@ -61,6 +72,8 @@ class MpesaReconciliationController extends Controller
             ])->all();
 
         $sections = [
+            ['key' => 'manual', 'title' => 'Manual M-Pesa payments: waiting to be verified', 'class' => 'box-warning', 'rows' => $manual, 'recheck' => false, 'verify' => true,
+             'help' => 'The cashier typed these codes in by hand. Upload your M-Pesa statement below to verify them all at once, or check one against the statement or your phone and press Verify. Reject if the code is wrong or the money never arrived; the sale then needs follow-up with the customer.'],
             ['key' => 'review', 'title' => 'Amount mismatch: needs manual review', 'class' => 'box-danger', 'rows' => $review, 'recheck' => false,
              'help' => 'The customer paid less than the amount requested. Check the M-Pesa statement, then collect the balance or refund.'],
             ['key' => 'unmatched', 'title' => 'Paid but not matched to any sale or payment', 'class' => 'box-warning', 'rows' => $unmatched, 'recheck' => false,
@@ -75,6 +88,8 @@ class MpesaReconciliationController extends Controller
             'received' => (clone $base)->where('m.status', 'success')->sum('m.amount'),
             'unmatched' => array_sum(array_column($unmatched, 'amount')),
             'review' => count($review),
+            'manual' => count($manual),
+            'manual_amount' => array_sum(array_column($manual, 'amount')),
             'stale' => count($stale),
         ];
 
@@ -92,5 +107,56 @@ class MpesaReconciliationController extends Controller
         }
 
         return view('report.mpesa_reconciliation', compact('sections', 'summary', 'from', 'to'));
+    }
+
+    private function authorise(): void
+    {
+        if (! auth()->user()->can('mpesa.reconcile')) {
+            abort(403, 'Unauthorized action.');
+        }
+    }
+
+    private function manualRow(Request $request, $id)
+    {
+        $row = DB::table('mpesa_transactions')
+            ->where('id', $id)->where('business_id', (int) $request->session()->get('user.business_id'))
+            ->where('source', 'manual')->where('status', 'manual')->first();
+        abort_if(! $row, 404);
+
+        return $row;
+    }
+
+    public function verify(Request $request, $id)
+    {
+        $this->authorise();
+        $row = $this->manualRow($request, $id);
+        $by = auth()->user()->first_name ?? 'manager';
+        MpesaStatementImporter::mark((int) $row->id, 'success', (int) auth()->id(), 'Verified by '.$by.' on '.now()->format('d/m H:i'));
+
+        return back()->with('status', ['success' => 1, 'msg' => 'Payment '.$row->mpesa_receipt_number.' marked as verified.']);
+    }
+
+    public function reject(Request $request, $id)
+    {
+        $this->authorise();
+        $request->validate(['reason' => 'nullable|string|max:150']);
+        $row = $this->manualRow($request, $id);
+        MpesaStatementImporter::mark((int) $row->id, 'review', (int) auth()->id(), 'REJECTED: '.($request->input('reason') ?: 'not confirmed on statement'));
+
+        return back()->with('status', ['success' => 1, 'msg' => 'Payment '.$row->mpesa_receipt_number.' rejected and moved to review. Follow up with the customer about sale #'.$row->transaction_id.'.']);
+    }
+
+    public function importStatement(Request $request)
+    {
+        $this->authorise();
+        $request->validate(['statement' => 'required|file|max:10240']);
+
+        $r = MpesaStatementImporter::import($request->file('statement')->getRealPath(), (int) $request->session()->get('user.business_id'), (int) auth()->id());
+
+        if ($r['error']) {
+            return back()->with('status', ['success' => 0, 'msg' => $r['error']]);
+        }
+
+        return back()->with('status', ['success' => 1, 'msg' => "Statement read ({$r['rows']} payments). Verified: {$r['matched']}. Amount mismatch (needs review): {$r['mismatch']}. Still not on the statement: {$r['not_found']}."]);
     }
 }

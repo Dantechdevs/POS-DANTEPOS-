@@ -12,11 +12,13 @@ class MpesaTransaction extends Model
         'phone', 'amount', 'account_reference', 'merchant_request_id',
         'checkout_request_id', 'status', 'mpesa_receipt_number', 'result_code',
         'result_desc', 'transaction_date', 'raw_callback', 'createdBy',
+        'source', 'verified_at', 'verified_by', 'verify_note',
     ];
 
     protected $casts = [
         'transaction_date' => 'datetime',
         'claimed_at' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     /** The POS sale this M-Pesa payment was used on. */
