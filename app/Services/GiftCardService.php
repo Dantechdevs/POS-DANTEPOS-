@@ -2,276 +2,152 @@
 
 namespace App\Services;
 
-use App\Exceptions\PurchaseSellMismatch;
-use Carbon\Carbon;
+use App\Utils\Util;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class GiftCardService
 {
-    /** No 0/O/1/I so codes are easy to read out and type. */
-    private const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
 
-    public const ISSUE_METHODS = [
-        'cash' => 'Cash',
-        'mpesa' => 'M-Pesa',
-        'card' => 'Card',
-        'bank_transfer' => 'Bank transfer',
-        'free' => 'Free (promo or credit note)',
-    ];
-
-    /** The payment method (custom_pay_1 .. custom_pay_7) that means "paid with a gift card". */
-    public function method(): ?string
+    public static function normalize($code): string
     {
-        $m = (string) config('services.gift_card.method');
-
-        return $m !== '' ? $m : null;
+        return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) $code));
     }
 
-    public function normalise(string $code): string
+    public static function format(string $code): string
     {
-        return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code));
+        return strlen($code) === 12
+            ? substr($code, 0, 2).'-'.substr($code, 2, 4).'-'.substr($code, 6, 4).'-'.substr($code, 10, 2)
+            : $code;
     }
 
-    /** @return array{0:string,1:string} [display code, lookup key] */
-    public function generateCode(): array
+    public static function generate(): string
     {
-        $prefix = $this->normalise((string) config('services.gift_card.prefix')) ?: 'GC';
-
         do {
-            $part = '';
-            for ($i = 0; $i < 8; $i++) {
-                $part .= self::ALPHABET[random_int(0, strlen(self::ALPHABET) - 1)];
+            $c = 'GC';
+            for ($i = 0; $i < 10; $i++) {
+                $c .= self::ALPHABET[random_int(0, 31)];
             }
-            $key = $prefix.$part;
-        } while (DB::table('gift_cards')->where('code_key', $key)->exists());
+        } while (DB::table('gift_cards')->where('code', $c)->exists());
 
-        return [$prefix.'-'.substr($part, 0, 4).'-'.substr($part, 4), $key];
+        return $c;
     }
 
-    public function status($card): string
+    public static function unusable($card, float $amount): ?string
     {
-        if ($card->status === 'void') {
-            return 'void';
+        if (! $card) {
+            return 'Gift card not found.';
         }
-
-        if ((float) $card->balance <= 0.0001) {
-            return 'used';
-        }
-
-        if ($card->expires_at && Carbon::parse($card->expires_at)->endOfDay()->isPast()) {
-            return 'expired';
-        }
-
-        return 'active';
-    }
-
-    public function find(int $businessId, string $key, bool $lock = false)
-    {
-        $q = DB::table('gift_cards')->where('business_id', $businessId)->where('code_key', $key);
-
-        if ($lock) {
-            $q->lockForUpdate();
-        }
-
-        return $q->first();
-    }
-
-    public function issue(int $businessId, float $amount, array $meta, ?int $userId)
-    {
-        [$code, $key] = $this->generateCode();
-        $now = now();
-        $via = $meta['issued_via'] ?? 'cash';
-
-        $id = DB::table('gift_cards')->insertGetId([
-            'business_id' => $businessId,
-            'code' => $code,
-            'code_key' => $key,
-            'initial_amount' => $amount,
-            'balance' => $amount,
-            'status' => 'active',
-            'expires_at' => $meta['expires_at'] ?? null,
-            'recipient_name' => $meta['recipient_name'] ?? null,
-            'recipient_phone' => $meta['recipient_phone'] ?? null,
-            'issued_via' => $via,
-            'note' => $meta['note'] ?? null,
-            'issued_by' => $userId,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        DB::table('gift_card_transactions')->insert([
-            'gift_card_id' => $id,
-            'business_id' => $businessId,
-            'type' => 'issue',
-            'amount' => $amount,
-            'balance_after' => $amount,
-            'user_id' => $userId,
-            'note' => 'Issued, '.strtolower(self::ISSUE_METHODS[$via] ?? $via),
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-
-        return DB::table('gift_cards')->where('id', $id)->first();
-    }
-
-    /** Manual change from the Gift Cards screen (positive adds, negative removes). */
-    public function adjust(int $businessId, int $cardId, float $delta, string $note, ?int $userId): float
-    {
-        return DB::transaction(function () use ($businessId, $cardId, $delta, $note, $userId) {
-            $card = DB::table('gift_cards')->where('business_id', $businessId)->where('id', $cardId)->lockForUpdate()->first();
-
-            if (! $card) {
-                throw new \RuntimeException('Gift card not found.');
-            }
-
-            return $this->applyDelta($card, $delta, 'adjust', null, null, $note, $userId);
-        });
-    }
-
-    public function void(int $businessId, int $cardId, string $reason, ?int $userId): void
-    {
-        DB::transaction(function () use ($businessId, $cardId, $reason, $userId) {
-            $card = DB::table('gift_cards')->where('business_id', $businessId)->where('id', $cardId)->lockForUpdate()->first();
-
-            if (! $card) {
-                throw new \RuntimeException('Gift card not found.');
-            }
-
-            if ($card->status === 'void') {
-                throw new \RuntimeException('This gift card is already cancelled.');
-            }
-
-            if ((float) $card->balance > 0.0001) {
-                $this->applyDelta($card, -(float) $card->balance, 'void', null, null, $reason, $userId);
-            }
-
-            DB::table('gift_cards')->where('id', $cardId)->update(['status' => 'void', 'updated_at' => now()]);
-        });
-    }
-
-    public function isGiftPayment($payment): bool
-    {
-        $m = $this->method();
-
-        return $m !== null
-            && (string) $payment->method === $m
-            && empty($payment->parent_id)
-            && empty($payment->is_return);
-    }
-
-    /**
-     * Make the card ledger match one sale payment.
-     * Safe to call repeatedly: it only moves the difference, so edits, deletes and
-     * duplicate events never charge or refund twice. Throws (so the sale is rolled back)
-     * when the code is wrong, expired, cancelled or the balance is too low.
-     */
-    public function syncPayment($payment, bool $deleted = false): void
-    {
-        $paymentId = (int) $payment->id;
-        $transactionId = $payment->transaction_id ? (int) $payment->transaction_id : null;
-        $userId = auth()->id();
-
-        // Net effect already recorded for this payment, per card (negative = card was charged).
-        $current = DB::table('gift_card_transactions')
-            ->where('transaction_payment_id', $paymentId)
-            ->select('gift_card_id', DB::raw('SUM(amount) as net'))
-            ->groupBy('gift_card_id')
-            ->pluck('net', 'gift_card_id');
-
-        $wantCardId = null;
-        $wantAmount = 0.0;
-
-        if (! $deleted && $this->isGiftPayment($payment)) {
-            $businessId = (int) ($payment->business_id ?: DB::table('transactions')->where('id', $payment->transaction_id)->value('business_id'));
-            $key = $this->normalise((string) $payment->transaction_no);
-
-            if ($key === '') {
-                throw new PurchaseSellMismatch('Type the gift card code in the Transaction No. field.');
-            }
-
-            $card = $this->find($businessId, $key, true);
-
-            if (! $card) {
-                throw new PurchaseSellMismatch('Gift card not found: '.strtoupper(trim((string) $payment->transaction_no)));
-            }
-
-            $wantCardId = (int) $card->id;
-            $wantAmount = round((float) $payment->amount, 4);
-        }
-
-        // 1. Give money back to any card this payment no longer uses (fully or partly).
-        foreach ($current as $cardId => $net) {
-            $debited = round(-1 * (float) $net, 4);
-            $want = ($wantCardId === (int) $cardId) ? $wantAmount : 0.0;
-            $delta = round($want - $debited, 4);
-
-            if ($delta < -0.0001) {
-                $old = DB::table('gift_cards')->where('id', $cardId)->lockForUpdate()->first();
-
-                if ($old) {
-                    $this->applyDelta($old, -$delta, 'refund', $paymentId, $transactionId, 'Payment changed or removed', $userId);
-                }
-            }
-        }
-
-        // 2. Take money from the card this payment now uses.
-        if ($wantCardId !== null) {
-            $debited = round(-1 * (float) ($current[$wantCardId] ?? 0), 4);
-            $more = round($wantAmount - $debited, 4);
-
-            if ($more > 0.0001) {
-                $card = DB::table('gift_cards')->where('id', $wantCardId)->lockForUpdate()->first();
-
-                $this->assertUsable($card);
-
-                if ($more > (float) $card->balance + 0.0001) {
-                    throw new PurchaseSellMismatch(
-                        'Gift card '.$card->code.' has only KSh '.number_format((float) $card->balance, 2).' left, which is less than KSh '.number_format($more, 2).'.'
-                    );
-                }
-
-                $invoice = $transactionId ? DB::table('transactions')->where('id', $transactionId)->value('invoice_no') : null;
-
-                $this->applyDelta($card, -$more, 'redeem', $paymentId, $transactionId, $invoice ? 'Redeemed on invoice '.$invoice : 'Redeemed', $userId);
-            }
-        }
-    }
-
-    private function assertUsable($card): void
-    {
         if ($card->status !== 'active') {
-            throw new PurchaseSellMismatch('Gift card '.$card->code.' has been cancelled.');
+            return 'This gift card has been voided.';
+        }
+        if ($card->expires_at && $card->expires_at < date('Y-m-d')) {
+            return 'This gift card expired on '.date('d/m/Y', strtotime($card->expires_at)).'.';
+        }
+        if ((float) $card->balance + 0.0001 < $amount) {
+            return 'Gift card balance is KSh '.number_format($card->balance, 2).', less than the KSh '.number_format($amount, 2).' requested.';
         }
 
-        if ($card->expires_at && Carbon::parse($card->expires_at)->endOfDay()->isPast()) {
-            throw new PurchaseSellMismatch('Gift card '.$card->code.' expired on '.Carbon::parse($card->expires_at)->format('d/m/Y').'.');
-        }
+        return null;
     }
 
-    private function applyDelta($card, float $delta, string $type, ?int $paymentId, ?int $transactionId, string $note, ?int $userId): float
+    /** Server-side pre-check of Gift Card payment rows on a sale. */
+    public static function violation(Request $request, $business_id): ?string
     {
-        $new = round((float) $card->balance + $delta, 4);
-
-        if ($new < -0.0001) {
-            throw new PurchaseSellMismatch('Gift card '.$card->code.' balance cannot go below zero.');
+        if ($request->input('status') !== 'final') {
+            return null;
         }
 
-        DB::table('gift_cards')->where('id', $card->id)->update(['balance' => $new, 'updated_at' => now()]);
+        $util = app(Util::class);
+        $totals = [];
 
-        DB::table('gift_card_transactions')->insert([
-            'gift_card_id' => $card->id,
-            'business_id' => $card->business_id,
+        foreach ((array) $request->input('payment', []) as $p) {
+            if (($p['method'] ?? '') !== 'gift_card') {
+                continue;
+            }
+            $amt = (float) $util->num_uf($p['amount'] ?? 0);
+            if ($amt <= 0) {
+                continue;
+            }
+            $code = self::normalize($p['gift_card_code'] ?? '');
+            if ($code === '') {
+                return 'Enter the gift card code for the Gift Card payment.';
+            }
+            $totals[$code] = ($totals[$code] ?? 0) + $amt;
+        }
+
+        foreach ($totals as $code => $amt) {
+            $card = DB::table('gift_cards')->where('business_id', $business_id)->where('code', $code)->first();
+            if ($msg = self::unusable($card, $amt)) {
+                return $msg;
+            }
+        }
+
+        return null;
+    }
+
+    public static function log($cardId, $businessId, string $type, float $amount, float $balanceAfter, array $extra = []): void
+    {
+        DB::table('gift_card_transactions')->insert(array_merge([
+            'gift_card_id' => $cardId,
+            'business_id' => $businessId,
             'type' => $type,
-            'amount' => $delta,
-            'balance_after' => $new,
-            'transaction_payment_id' => $paymentId,
-            'transaction_id' => $transactionId,
-            'user_id' => $userId,
-            'note' => substr($note, 0, 255),
+            'amount' => $amount,
+            'balance_after' => $balanceAfter,
+            'user_id' => auth()->id(),
             'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        ], $extra));
+    }
 
-        return $new;
+    private static function businessIdOf($tp)
+    {
+        return $tp->business_id ?: DB::table('transactions')->where('id', $tp->transaction_id)->value('business_id');
+    }
+
+    /** Deduct from the card. Call inside the sale's DB transaction; throws on any problem. */
+    public static function redeem($tp, float $amount): void
+    {
+        $code = self::normalize($tp->gift_card_code);
+        if ($code === '') {
+            throw new \Exception('A gift card code is required for Gift Card payments. Gift cards can only be redeemed at the POS.');
+        }
+
+        $bid = self::businessIdOf($tp);
+        $card = DB::table('gift_cards')->where('business_id', $bid)->where('code', $code)->lockForUpdate()->first();
+
+        if ($msg = self::unusable($card, $amount)) {
+            throw new \Exception($msg);
+        }
+
+        $new = round((float) $card->balance - $amount, 4);
+        DB::table('gift_cards')->where('id', $card->id)->update(['balance' => $new, 'updated_at' => now()]);
+        self::log($card->id, $bid, 'redeem', -$amount, $new, [
+            'transaction_id' => $tp->transaction_id,
+            'transaction_payment_id' => $tp->id,
+        ]);
+    }
+
+    /** Put money back on the card (payment edited down or deleted). */
+    public static function restore($tp, float $amount, string $note): void
+    {
+        $code = self::normalize($tp->gift_card_code);
+        if ($code === '' || $amount <= 0) {
+            return;
+        }
+
+        $bid = self::businessIdOf($tp);
+        $card = DB::table('gift_cards')->where('business_id', $bid)->where('code', $code)->lockForUpdate()->first();
+        if (! $card) {
+            return;
+        }
+
+        $new = round((float) $card->balance + $amount, 4);
+        DB::table('gift_cards')->where('id', $card->id)->update(['balance' => $new, 'updated_at' => now()]);
+        self::log($card->id, $bid, 'restore', $amount, $new, [
+            'transaction_id' => $tp->transaction_id,
+            'transaction_payment_id' => $tp->id,
+            'note' => $note,
+        ]);
     }
 }
