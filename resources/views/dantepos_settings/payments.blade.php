@@ -80,5 +80,6 @@
             </form>
         </div>
     </div>
+    @include('dantepos_settings.payment_channels')
 </section>
 @endsection

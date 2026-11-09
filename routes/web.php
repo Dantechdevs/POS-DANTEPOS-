@@ -294,6 +294,13 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'index'])->name('dantepos.payments');
     Route::post('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'update'])->name('dantepos.payments.update');
     Route::post('/dantepos-payments/kenya', [\App\Http\Controllers\DantePaymentController::class, 'kenyaPreset'])->name('dantepos.payments.kenya');
+
+    // Kenyan payment channels and bank accounts
+    Route::post('/dantepos-payments/channel/{channel}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'saveChannel'])->name('dantepos.payments.channel');
+    Route::post('/dantepos-payments/banks', [\App\Http\Controllers\DantePaymentChannelsController::class, 'storeBank'])->name('dantepos.payments.bank.store');
+    Route::post('/dantepos-payments/banks/{id}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'updateBank'])->whereNumber('id')->name('dantepos.payments.bank.update');
+    Route::post('/dantepos-payments/banks/{id}/toggle', [\App\Http\Controllers\DantePaymentChannelsController::class, 'toggleBank'])->whereNumber('id')->name('dantepos.payments.bank.toggle');
+    Route::post('/dantepos-payments/banks/{id}/delete', [\App\Http\Controllers\DantePaymentChannelsController::class, 'deleteBank'])->whereNumber('id')->name('dantepos.payments.bank.delete');
     Route::post('/dantepos-settings/sms-test', [\App\Http\Controllers\DanteSettingsController::class, 'smsTest'])->name('dantepos.settings.sms');
     Route::post('/dantepos-settings/backup-schedule', [\App\Http\Controllers\DanteSettingsController::class, 'backupSchedule'])->name('dantepos.settings.backup_schedule');
     Route::get('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'index'])->name('giftcards.index');
