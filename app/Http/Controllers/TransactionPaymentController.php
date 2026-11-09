@@ -547,7 +547,7 @@ class TransactionPaymentController extends Controller
             $business_id = request()->session()->get('business.id');
             $mpesa_claim = null;
             if ($request->input('method') === 'mpesa') {
-                $mpesa_claim = \App\Services\MpesaPaymentGuard::claimForDuePayment(
+                $mpesa_claim = \App\Services\MpesaDueGuard::claimForDuePayment(
                     (string) $request->input('pd_mpesa_checkout_request_id'),
                     (float) $this->transactionUtil->num_uf($request->input('amount')),
                     (int) $business_id
