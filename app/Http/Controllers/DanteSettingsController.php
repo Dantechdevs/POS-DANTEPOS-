@@ -106,4 +106,78 @@ class DanteSettingsController extends Controller
 
         return back()->with('status', ['success' => $code === 0 ? 1 : 0, 'msg' => $out ?: ($code === 0 ? 'Backup finished.' : 'Backup failed. See the log.')]);
     }
+
+    public function smsTest(Request $request)
+    {
+        $this->allowed();
+
+        $key = 'dante-sms-test:'.auth()->id();
+        if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+            return back()->with('status', ['success' => 0, 'msg' => 'Too many test messages. Try again in an hour.']);
+        }
+
+        $phone = AfricasTalkingSms::normalizePhone(trim((string) $request->input('test_phone')));
+        if (! $phone) {
+            return back()->withInput()->with('status', ['success' => 0, 'msg' => 'Not a valid Kenyan phone number.']);
+        }
+
+        $sms = new AfricasTalkingSms();
+        if (! $sms->configured()) {
+            return back()->with('status', ['success' => 0, 'msg' => "Africa's Talking is not set up. Add the username and API key to .env first."]);
+        }
+
+        \Illuminate\Support\Facades\RateLimiter::hit($key, 3600);
+
+        try {
+            $res = $sms->send($phone, 'DantePOS test message. SMS is working. '.now()->format('d/m/Y H:i'));
+        } catch (\Throwable $e) {
+            Log::warning('DantePOS SMS test failed', ['user_id' => auth()->id(), 'error' => $e->getMessage()]);
+
+            return back()->with('status', ['success' => 0, 'msg' => 'SMS failed: '.$e->getMessage()]);
+        }
+
+        $failed = (isset($res['success']) && ! $res['success'])
+            || (isset($res['ok']) && ! $res['ok'])
+            || ! empty($res['error']);
+        Log::info('DantePOS SMS test', ['user_id' => auth()->id(), 'phone' => $phone, 'response' => $res]);
+
+        return back()->with('status', [
+            'success' => $failed ? 0 : 1,
+            'msg' => ($failed ? 'The provider reported a problem: ' : 'Sent to '.$phone.'. Provider said: ').mb_substr((string) json_encode($res), 0, 300),
+        ]);
+    }
+
+    public function backupSchedule(Request $request)
+    {
+        $this->allowed();
+
+        $time = (string) $request->input('backup_time');
+        $days = (int) $request->input('backup_keep_days');
+
+        if (! preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $time)) {
+            return back()->withInput()->with('status', ['success' => 0, 'msg' => 'Enter the time as HH:MM, for example 21:00.']);
+        }
+        if ($days < 1 || $days > 365) {
+            return back()->withInput()->with('status', ['success' => 0, 'msg' => 'Keep backups for between 1 and 365 days.']);
+        }
+
+        $new = [
+            'backup_enabled' => $request->boolean('backup_enabled') ? '1' : '0',
+            'backup_time' => $time,
+            'backup_keep_days' => (string) $days,
+        ];
+
+        $before = DanteSettings::current();
+        foreach ($new as $k => $v) {
+            DanteSettings::set($k, $v);
+        }
+
+        Log::info('DantePOS backup schedule changed', ['user_id' => auth()->id(), 'before' => $before, 'after' => $new]);
+
+        $msg = $new['backup_enabled'] === '0'
+            ? 'Saved. Automatic backups are OFF. Use "Back up now" or turn them back on.'
+            : 'Backup schedule saved: every day at '.$time.', kept for '.$days.' days.';
+
+        return back()->with('status', ['success' => 1, 'msg' => $msg]);
+    }
 }

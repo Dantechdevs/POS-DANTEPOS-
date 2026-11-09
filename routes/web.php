@@ -288,6 +288,11 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/reorder', [\App\Http\Controllers\ReorderController::class, 'index'])->name('reports.reorder');
     Route::get('/reports/expiry-watch', [\App\Http\Controllers\ExpiryWatchController::class, 'index'])->name('reports.expiry_watch');
     Route::get('/reports/margins', [\App\Http\Controllers\MarginReportController::class, 'index'])->name('reports.margins');
+    Route::get('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'index'])->name('dantepos.settings');
+    Route::post('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'update'])->name('dantepos.settings.update');
+    Route::post('/dantepos-settings/backup', [\App\Http\Controllers\DanteSettingsController::class, 'backupNow'])->name('dantepos.settings.backup');
+    Route::post('/dantepos-settings/sms-test', [\App\Http\Controllers\DanteSettingsController::class, 'smsTest'])->name('dantepos.settings.sms');
+    Route::post('/dantepos-settings/backup-schedule', [\App\Http\Controllers\DanteSettingsController::class, 'backupSchedule'])->name('dantepos.settings.backup_schedule');
     Route::get('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'index'])->name('giftcards.index');
     Route::post('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'store'])->name('giftcards.store');
     Route::get('/gift-cards/balance', [\App\Http\Controllers\GiftCardController::class, 'balance'])->name('giftcards.balance');

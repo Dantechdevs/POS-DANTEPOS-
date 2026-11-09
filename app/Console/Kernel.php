@@ -15,7 +15,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('db:backup')->dailyAt('21:00');
+        if (config('backup.enabled', true)) {
+            $schedule->command('db:backup')->dailyAt(config('backup.time', '21:00'));
+        }
         $schedule->command('reports:daily-summary')->dailyAt('20:00');
         $schedule->command('report:low-stock')->dailyAt('07:30')->timezone('Africa/Nairobi');
 

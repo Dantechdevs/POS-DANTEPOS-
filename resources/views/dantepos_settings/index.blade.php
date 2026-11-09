@@ -89,6 +89,41 @@
         </div>
     </div>
 
+    {{-- Test SMS --}}
+    <div class="box box-solid">
+        <div class="box-header with-border"><h3 class="box-title">Test SMS</h3></div>
+        <div class="box-body">
+            <form method="POST" action="{{ url('/dantepos-settings/sms-test') }}" class="form-inline" onsubmit="return confirm('Send a real SMS now? It uses SMS credit.');">
+                @csrf
+                <input type="text" name="test_phone" class="form-control" placeholder="0712345678" value="{{ old('test_phone') }}" required>
+                <button class="btn btn-default"><i class="fa fa-comment"></i> Send test message</button>
+            </form>
+            <p class="help-block">Sends one real message through Africa's Talking and shows the provider's reply. Limited to 5 per hour.</p>
+        </div>
+    </div>
+
+    {{-- Backup schedule --}}
+    <div class="box box-solid">
+        <div class="box-header with-border"><h3 class="box-title">Backup schedule</h3></div>
+        <div class="box-body">
+            <form method="POST" action="{{ url('/dantepos-settings/backup-schedule') }}">
+                @csrf
+                <input type="hidden" name="backup_enabled" value="0">
+                <div class="checkbox"><label><input type="checkbox" name="backup_enabled" value="1" {{ old('backup_enabled', $settings['backup_enabled']) ? 'checked' : '' }}> Back up the database automatically every day</label></div>
+                <div class="form-group" style="margin-top:10px">
+                    <label for="backup_time">Time of day</label>
+                    <input type="time" name="backup_time" id="backup_time" class="form-control" style="max-width:160px" value="{{ old('backup_time', $settings['backup_time']) }}">
+                </div>
+                <div class="form-group">
+                    <label for="backup_keep_days">Keep backups for (days)</label>
+                    <input type="number" name="backup_keep_days" id="backup_keep_days" class="form-control" style="max-width:160px" min="1" max="365" value="{{ old('backup_keep_days', $settings['backup_keep_days']) }}">
+                    <p class="help-block">How long backup files are kept before they are deleted.</p>
+                </div>
+                <button class="btn btn-primary">Save schedule</button>
+            </form>
+        </div>
+    </div>
+
     {{-- Backups --}}
     <div class="box box-solid">
         <div class="box-header with-border"><h3 class="box-title">Backups</h3></div>
