@@ -71,5 +71,14 @@
         </div>
     </div>
     {!! Form::close() !!}
+
+    <div class="row" style="margin-top:15px;">
+        <div class="col-sm-12 text-center">
+            <form method="POST" action="{{ route('dantepos.payments.kenya') }}" style="display:inline;" onsubmit="return confirm('Enable only Cash and M-Pesa, with Cash as the default? Other methods will be hidden from the POS.');">
+                @csrf
+                <button type="submit" class="tw-dw-btn tw-dw-btn-outline tw-dw-btn-primary">Kenya preset: Cash and M-Pesa only</button>
+            </form>
+        </div>
+    </div>
 </section>
 @endsection

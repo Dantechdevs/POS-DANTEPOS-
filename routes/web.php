@@ -291,6 +291,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'index'])->name('dantepos.settings');
     Route::post('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'update'])->name('dantepos.settings.update');
     Route::post('/dantepos-settings/backup', [\App\Http\Controllers\DanteSettingsController::class, 'backupNow'])->name('dantepos.settings.backup');
+    Route::get('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'index'])->name('dantepos.payments');
+    Route::post('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'update'])->name('dantepos.payments.update');
+    Route::post('/dantepos-payments/kenya', [\App\Http\Controllers\DantePaymentController::class, 'kenyaPreset'])->name('dantepos.payments.kenya');
     Route::post('/dantepos-settings/sms-test', [\App\Http\Controllers\DanteSettingsController::class, 'smsTest'])->name('dantepos.settings.sms');
     Route::post('/dantepos-settings/backup-schedule', [\App\Http\Controllers\DanteSettingsController::class, 'backupSchedule'])->name('dantepos.settings.backup_schedule');
     Route::get('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'index'])->name('giftcards.index');

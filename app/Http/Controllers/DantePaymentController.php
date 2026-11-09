@@ -133,4 +133,24 @@ class DantePaymentController extends Controller
 
         return back()->with('dantepos_msg', 'Payment configuration saved.');
     }
+
+    public function kenyaPreset(Request $request)
+    {
+        $this->allowed();
+        $business_id = $request->session()->get('user.business_id');
+        $st = $this->state($business_id);
+
+        $keep = array_values(array_intersect(['cash', 'mpesa'], array_keys($st['methods'])));
+        if (count($keep) === 0) {
+            return back()->with('dantepos_error', 'Cash and M-Pesa were not found. Nothing was changed.');
+        }
+
+        $request->merge([
+            'enabled' => $keep,
+            'default' => 'cash',
+            'label' => $st['labels'],
+        ]);
+
+        return $this->update($request);
+    }
 }
