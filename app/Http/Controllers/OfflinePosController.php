@@ -228,13 +228,25 @@ class OfflinePosController extends Controller
                 $payload = $this->buildPayload($request, $sale, $marker, $bid);
 
                 $fake = Request::create('/pos', 'POST', $payload);
+                $fake->headers->set('X-Requested-With', 'XMLHttpRequest'); // guards then answer with JSON
                 $fake->setLaravelSession($request->session());
                 $fake->setUserResolver(fn () => $request->user());
 
                 $result = app(SellPosController::class)->store($fake);
 
+                if ($result instanceof \Illuminate\Http\JsonResponse) {
+                    $result = $result->getData(true);
+                }
+
                 if (! is_array($result)) {
-                    throw new \RuntimeException('Open a cash register first (Sell > POS), then sync again.');
+                    // A guard redirected with a flashed message: show that instead of guessing.
+                    $flash = $request->session()->pull('status');
+
+                    throw new \RuntimeException(
+                        is_array($flash) && ! empty($flash['msg'])
+                            ? $flash['msg']
+                            : 'Open a cash register first (Sell > POS), then sync again.'
+                    );
                 }
 
                 if (empty($result['success'])) {
