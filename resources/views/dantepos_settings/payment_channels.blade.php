@@ -1,10 +1,12 @@
 @php
     $bid = (int) request()->session()->get('user.business_id');
-    $channels = \App\Services\PaymentChannelService::channels($bid);
-    $banks = \App\Services\PaymentChannelService::banks($bid);
+    $channels = $channels ?? \App\Services\PaymentChannelService::channels($bid);
+    $banks = $banks ?? \App\Services\PaymentChannelService::banks($bid);
     $bankList = \App\Services\PaymentChannelService::BANKS;
     $fieldMap = \App\Services\PaymentChannelService::FIELDS;
+    $maxLen = ['business_name' => 80, 'account_number' => 40, 'account_reference' => 60];
     $st = ['active' => ['success', 'Active'], 'inactive' => ['default', 'Inactive'], 'not_configured' => ['warning', 'Not configured']];
+    $bankEditId = (int) old('_bank_id');
 @endphp
 
 <style>
@@ -23,7 +25,7 @@
         <small>Bank accounts, mobile money and online payments</small>
     </h3>
 
-    @if ($errors->any())
+    @if ($errors->any() && ! old('_bank_form'))
         <div class="alert alert-danger" id="dante_channel_errors">
             <ul style="margin:0;padding-left:18px;">
                 @foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach
@@ -92,24 +94,26 @@
 
     <div class="row">
         @foreach ($channels as $key => $c)
+            @php $mine = old('_channel') === $key; @endphp
             <div class="col-md-6">
                 @component('components.widget', ['class' => 'box-solid', 'title' => $c['label']])
                     <form method="POST" action="{{ route('dantepos.payments.channel', $key) }}">
                         @csrf
+                        <input type="hidden" name="_channel" value="{{ $key }}">
                         <p><span class="label label-{{ $st[$c['status']][0] }}">{{ $st[$c['status']][1] }}</span></p>
                         <label class="dante-switch-row">
-                            <span class="dante-switch"><input type="checkbox" name="is_enabled" value="1" {{ $c['is_enabled'] ? 'checked' : '' }}><span></span></span>
+                            <span class="dante-switch"><input type="checkbox" name="is_enabled" value="1" {{ ($mine ? (bool) old('is_enabled') : $c['is_enabled']) ? 'checked' : '' }}><span></span></span>
                             Enabled
                         </label>
                         @foreach ($fieldMap[$key] as $field => $fieldLabel)
                             <div class="form-group">
                                 <label>{{ $fieldLabel }}</label>
-                                <input type="text" class="form-control" name="{{ $field }}" value="{{ $c[$field] }}" maxlength="80">
+                                <input type="text" class="form-control" name="{{ $field }}" value="{{ $mine ? old($field, '') : $c[$field] }}" maxlength="{{ $maxLen[$field] ?? 80 }}">
                             </div>
                         @endforeach
                         <div class="form-group">
                             <label>Payment instructions shown to customers</label>
-                            <textarea class="form-control" name="instructions" rows="3" maxlength="500">{{ $c['instructions'] }}</textarea>
+                            <textarea class="form-control" name="instructions" rows="3" maxlength="500">{{ $mine ? old('instructions', '') : $c['instructions'] }}</textarea>
                         </div>
                         @if ($key === 'card')
                             <p class="text-muted small">Card payments need an account with a card gateway before customers can pay by card online. This only controls what is shown.</p>
@@ -127,58 +131,68 @@
 <div class="modal fade" id="dante_bank_modal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <form method="POST" id="dante_bank_form" action="{{ route('dantepos.payments.bank.store') }}" data-add-url="{{ route('dantepos.payments.bank.store') }}">
+            <form method="POST" id="dante_bank_form"
+                action="{{ $bankEditId ? route('dantepos.payments.bank.update', $bankEditId) : route('dantepos.payments.bank.store') }}"
+                data-add-url="{{ route('dantepos.payments.bank.store') }}">
                 @csrf
+                <input type="hidden" name="_bank_form" value="1">
+                <input type="hidden" name="_bank_id" id="dante_bank_id" value="{{ $bankEditId ?: '' }}">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="dante_bank_title">Add bank account</h4>
+                    <h4 class="modal-title" id="dante_bank_title">{{ $bankEditId ? 'Edit bank account' : 'Add bank account' }}</h4>
                 </div>
                 <div class="modal-body">
+                    @if (old('_bank_form') && $errors->any())
+                        <div class="alert alert-danger">
+                            <ul style="margin:0;padding-left:18px;">
+                                @foreach ($errors->all() as $e)<li>{{ $e }}</li>@endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <div class="form-group">
                         <label for="dante_bank_name">Bank</label>
                         <select class="form-control" id="dante_bank_name" name="bank_name" required>
-                            @foreach ($bankList as $bn)<option value="{{ $bn }}">{{ $bn }}</option>@endforeach
-                            <option value="Other">Other bank</option>
+                            @foreach ($bankList as $bn)<option value="{{ $bn }}" {{ old('bank_name') === $bn ? 'selected' : '' }}>{{ $bn }}</option>@endforeach
+                            <option value="Other" {{ old('bank_name') === 'Other' ? 'selected' : '' }}>Other bank</option>
                         </select>
                     </div>
                     <div class="form-group" id="dante_other_bank_wrap" style="display:none;">
                         <label for="dante_other_bank">Bank name</label>
-                        <input type="text" class="form-control" id="dante_other_bank" name="other_bank_name" maxlength="100">
+                        <input type="text" class="form-control" id="dante_other_bank" name="other_bank_name" value="{{ old('other_bank_name') }}" maxlength="100">
                     </div>
                     <div class="form-group">
                         <label for="dante_branch_name">Branch name (optional)</label>
-                        <input type="text" class="form-control" id="dante_branch_name" name="branch_name" maxlength="100">
+                        <input type="text" class="form-control" id="dante_branch_name" name="branch_name" value="{{ old('branch_name') }}" maxlength="100">
                     </div>
                     <div class="form-group">
                         <label for="dante_account_name">Account name</label>
-                        <input type="text" class="form-control" id="dante_account_name" name="account_name" maxlength="120" required>
+                        <input type="text" class="form-control" id="dante_account_name" name="account_name" value="{{ old('account_name') }}" maxlength="120" required>
                     </div>
                     <div class="form-group">
                         <label for="dante_account_number">Account number</label>
-                        <input type="text" class="form-control" id="dante_account_number" name="account_number" maxlength="40" required>
+                        <input type="text" class="form-control" id="dante_account_number" name="account_number" value="{{ old('account_number') }}" maxlength="40" required>
                     </div>
                     <div class="row">
                         <div class="col-sm-6 form-group">
                             <label for="dante_branch_code">Branch code (optional)</label>
-                            <input type="text" class="form-control" id="dante_branch_code" name="branch_code" maxlength="20">
+                            <input type="text" class="form-control" id="dante_branch_code" name="branch_code" value="{{ old('branch_code') }}" maxlength="20">
                         </div>
                         <div class="col-sm-6 form-group">
                             <label for="dante_swift_code">SWIFT code (optional)</label>
-                            <input type="text" class="form-control" id="dante_swift_code" name="swift_code" maxlength="11">
+                            <input type="text" class="form-control" id="dante_swift_code" name="swift_code" value="{{ old('swift_code') }}" maxlength="11">
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="dante_currency">Currency</label>
                         <select class="form-control" id="dante_currency" name="currency">
-                            <option value="KES" selected>KES</option><option value="USD">USD</option>
-                            <option value="EUR">EUR</option><option value="GBP">GBP</option>
+                            @foreach (['KES', 'USD', 'EUR', 'GBP'] as $cur)<option value="{{ $cur }}" {{ old('currency', 'KES') === $cur ? 'selected' : '' }}>{{ $cur }}</option>@endforeach
                         </select>
                     </div>
                     <div class="form-group">
                         <label for="dante_bank_instructions">Payment instructions (optional)</label>
-                        <textarea class="form-control" id="dante_bank_instructions" name="instructions" rows="3" maxlength="500"></textarea>
+                        <textarea class="form-control" id="dante_bank_instructions" name="instructions" rows="3" maxlength="500">{{ old('instructions') }}</textarea>
                     </div>
-                    <label><input type="checkbox" id="dante_bank_active" name="is_active" value="1" checked> Active</label>
+                    <label><input type="checkbox" id="dante_bank_active" name="is_active" value="1" {{ old('_bank_form') ? (old('is_active') ? 'checked' : '') : 'checked' }}> Active</label>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
@@ -206,7 +220,13 @@
             form.reset();
             form.action = addUrl;
             title.textContent = 'Add bank account';
+            form.querySelectorAll('input[type=text], textarea').forEach(function (el) { el.value = ''; });
+            sel.selectedIndex = 0;
+            setVal('dante_currency', 'KES');
+            setVal('dante_bank_id', '');
             document.getElementById('dante_bank_active').checked = true;
+            var box = form.querySelector('.modal-body .alert');
+            if (box) { box.style.display = 'none'; }
             syncOther();
         });
     });
@@ -217,6 +237,7 @@
             form.reset();
             form.action = btn.getAttribute('data-action');
             title.textContent = 'Edit bank account';
+            setVal('dante_bank_id', b.id);
             var known = Array.prototype.some.call(sel.options, function (o) { return o.value === b.bank_name; });
             sel.value = known ? b.bank_name : 'Other';
             setVal('dante_other_bank', known ? '' : b.bank_name);
@@ -228,11 +249,17 @@
             setVal('dante_currency', b.currency);
             setVal('dante_bank_instructions', b.instructions);
             document.getElementById('dante_bank_active').checked = !!b.is_active;
+            var box = form.querySelector('.modal-body .alert');
+            if (box) { box.style.display = 'none'; }
             syncOther();
         });
     });
 
     syncOther();
+    var reopen = {!! old('_bank_form') && $errors->any() ? 'true' : 'false' !!};
+    if (reopen) {
+        window.addEventListener('load', function () { if (window.jQuery) { jQuery('#dante_bank_modal').modal('show'); } });
+    }
     var err = document.getElementById('dante_channel_errors');
     if (err) { err.scrollIntoView({ block: 'center' }); }
 })();

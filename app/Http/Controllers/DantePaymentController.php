@@ -70,7 +70,10 @@ class DantePaymentController extends Controller
         $this->allowed();
         $business_id = request()->session()->get('user.business_id');
 
-        return view('dantepos_settings.payments', $this->state($business_id));
+        return view('dantepos_settings.payments', $this->state($business_id) + [
+            'channels' => \App\Services\PaymentChannelService::channels((int) $business_id),
+            'banks' => \App\Services\PaymentChannelService::banks((int) $business_id),
+        ]);
     }
 
     public function update(Request $request)
