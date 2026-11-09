@@ -100,7 +100,7 @@ class DanteposCheck extends Command
 
         config('pricing.guard_mode') === 'block'
             ? $this->good('Price guard: block')
-            : $this->flag('Price guard is in warn mode. Below-cost sales are logged but allowed.');
+            : $this->flag(config('pricing.guard_mode') === 'off' ? 'Price guard is OFF. Below-cost sales are not checked or logged.' : 'Price guard is in warn mode. Below-cost sales are logged but allowed.');
 
         if (config('etims.enabled')) {
             (config('etims.base_url') && config('etims.tin') && config('etims.cmc_key'))
