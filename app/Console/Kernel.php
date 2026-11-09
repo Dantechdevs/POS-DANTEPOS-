@@ -21,7 +21,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('reports:daily-summary')->dailyAt('20:00');
         $schedule->command('report:low-stock')->dailyAt('07:30')->timezone('Africa/Nairobi');
 
-        $schedule->command('report:daily-summary')->dailyAt('21:00')->timezone('Africa/Nairobi');
+        // Disabled: duplicate of reports:daily-summary, which uses the owner phones set in DantePOS Settings.
+        // $schedule->command('report:daily-summary')->dailyAt('21:00')->timezone('Africa/Nairobi');
 
         $schedule->command('debts:remind')->dailyAt('09:00');
         $env = config('app.env');
