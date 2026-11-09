@@ -579,14 +579,6 @@ class AdminSidebarMenu
                 )->order(42);
             }
 
-            if (auth()->user()->can('dantepos.settings')) {
-                $menu->url(
-                    url('/dantepos-settings'),
-                    'DantePOS Settings',
-                    ['icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="tw-size-5 tw-shrink-0" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"/><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/></svg>', 'active' => request()->segment(1) == 'dantepos-settings']
-                );
-            }
-
             if (auth()->user()->can('purchase_n_sell_report.view') || auth()->user()->can('contacts_report.view')
                 || auth()->user()->can('stock_report.view') || auth()->user()->can('tax_report.view')
                 || auth()->user()->can('trending_product_report.view') || auth()->user()->can('sales_representative.view') || auth()->user()->can('register_report.view')
@@ -883,6 +875,7 @@ class AdminSidebarMenu
                 auth()->user()->can('invoice_settings.access') ||
                 auth()->user()->can('tax_rate.view') ||
                 auth()->user()->can('tax_rate.create') ||
+                auth()->user()->can('dantepos.settings') ||
                 auth()->user()->can('access_package_subscriptions')) {
                 $menu->dropdown(
                     __('business.settings'),
@@ -926,6 +919,14 @@ class AdminSidebarMenu
                                 action([\App\Http\Controllers\TaxRateController::class, 'index']),
                                 __('tax_rate.tax_rates'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'tax-rates']
+                            );
+                        }
+
+                        if (auth()->user()->can('dantepos.settings')) {
+                            $sub->url(
+                                url('/dantepos-settings'),
+                                'DantePOS Settings',
+                                ['icon' => '', 'active' => request()->segment(1) == 'dantepos-settings']
                             );
                         }
 
