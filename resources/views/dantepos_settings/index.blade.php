@@ -1,15 +1,15 @@
 @extends('layouts.app')
-@section('title', 'DantePOS Settings')
+@section('title', 'SMS Settings')
 
 @section('content')
 <section class="content-header">
-    <h1>DantePOS Settings <small>Rules, alerts and system health</small></h1>
+    <h1 class="tw-text-xl md:tw-text-3xl tw-font-bold tw-text-black">SMS Settings <small class="tw-text-sm md:tw-text-base tw-text-gray-700 tw-font-semibold">SMS alerts, selling rules and system health</small></h1>
 </section>
 
 <section class="content">
     {{-- System check --}}
     <div class="box {{ $counts['fail'] ? 'box-danger' : ($counts['warn'] ? 'box-warning' : 'box-success') }}">
-        <div class="box-header with-border">
+        <div class="box-header">
             <h3 class="box-title">System check</h3>
             <div class="box-tools">
                 <span class="label label-danger">{{ $counts['fail'] }} failure(s)</span>
@@ -42,7 +42,7 @@
     <form method="POST" action="{{ url('/dantepos-settings') }}" id="settingsForm">
         @csrf
         <div class="box box-solid">
-            <div class="box-header with-border"><h3 class="box-title">Selling rules</h3></div>
+            <div class="box-header"><h3 class="box-title">Selling rules</h3></div>
             <div class="box-body">
                 <div class="form-group">
                     <label>Selling below cost</label>
@@ -63,7 +63,7 @@
         </div>
 
         <div class="box box-solid">
-            <div class="box-header with-border"><h3 class="box-title">Alerts</h3></div>
+            <div class="box-header"><h3 class="box-title">Alerts</h3></div>
             <div class="box-body">
                 <div class="form-group">
                     <label for="owner_phones">Owner phone numbers</label>
@@ -73,12 +73,12 @@
             </div>
         </div>
 
-        <button class="btn btn-primary btn-lg">Save settings</button>
+        <button class="tw-dw-btn tw-dw-btn-primary tw-text-white tw-dw-btn-lg">Save settings</button>
     </form>
 
     {{-- Services --}}
     <div class="box box-solid" style="margin-top:20px">
-        <div class="box-header with-border"><h3 class="box-title">Connected services</h3></div>
+        <div class="box-header"><h3 class="box-title">Connected services</h3></div>
         <div class="box-body">
             <table class="table table-condensed">
                 @foreach($services as $name => $status)
@@ -91,7 +91,7 @@
 
     {{-- Test SMS --}}
     <div class="box box-solid">
-        <div class="box-header with-border"><h3 class="box-title">Test SMS</h3></div>
+        <div class="box-header"><h3 class="box-title">Test SMS</h3></div>
         <div class="box-body">
             <form method="POST" action="{{ url('/dantepos-settings/sms-test') }}" class="form-inline" onsubmit="return confirm('Send a real SMS now? It uses SMS credit.');">
                 @csrf
@@ -104,7 +104,7 @@
 
     {{-- Backup schedule --}}
     <div class="box box-solid">
-        <div class="box-header with-border"><h3 class="box-title">Backup schedule</h3></div>
+        <div class="box-header"><h3 class="box-title">Backup schedule</h3></div>
         <div class="box-body">
             <form method="POST" action="{{ url('/dantepos-settings/backup-schedule') }}">
                 @csrf
@@ -119,14 +119,14 @@
                     <input type="number" name="backup_keep_days" id="backup_keep_days" class="form-control" style="max-width:160px" min="1" max="365" value="{{ old('backup_keep_days', $settings['backup_keep_days']) }}">
                     <p class="help-block">How long backup files are kept before they are deleted.</p>
                 </div>
-                <button class="btn btn-primary">Save schedule</button>
+                <button class="tw-dw-btn tw-dw-btn-primary tw-text-white">Save schedule</button>
             </form>
         </div>
     </div>
 
     {{-- Backups --}}
     <div class="box box-solid">
-        <div class="box-header with-border"><h3 class="box-title">Backups</h3></div>
+        <div class="box-header"><h3 class="box-title">Backups</h3></div>
         <div class="box-body">
             <table class="table table-condensed">
                 <thead><tr><th>File</th><th>Size</th><th>Created</th></tr></thead>
