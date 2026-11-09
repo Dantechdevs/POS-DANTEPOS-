@@ -102,6 +102,10 @@ Route::middleware(['setData'])->group(function () {
 
 //Routes for authenticated users only
 Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 'AdminSidebarMenu', 'CheckUserLogin'])->group(function () {
+    // eTIMS invoice queue
+    Route::get('/etims', [\App\Http\Controllers\EtimsInvoiceController::class, 'index'])->name('etims.index');
+    Route::post('/etims/retry-failed', [\App\Http\Controllers\EtimsInvoiceController::class, 'retryFailed'])->name('etims.retryFailed');
+    Route::post('/etims/{id}/retry', [\App\Http\Controllers\EtimsInvoiceController::class, 'retry'])->name('etims.retry');
     Route::get('pos/payment/{id}', [SellPosController::class, 'edit'])->name('edit-pos-payment');
     Route::post('mpesa/stkpush', [MpesaController::class, 'initiate'])->middleware('throttle:10,1')->name('mpesa.stkpush');
     Route::get('mpesa/status/{checkoutRequestId}', [MpesaController::class, 'status'])->name('mpesa.status');
