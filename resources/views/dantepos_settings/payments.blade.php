@@ -82,5 +82,6 @@
     </div>
     @include('dantepos_settings.payment_channels')
     @include('dantepos_settings.mpesa_settings')
+    @include('dantepos_settings.mpesa_credentials')
 </section>
 @endsection

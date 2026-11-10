@@ -88,7 +88,7 @@ class MpesaController extends Controller
             // AccountReference is limited to 12 characters by Daraja.
             $reference = 'POS' . strtoupper(Str::random(8));
 
-            $result = $this->mpesaService->stkPush($phone, $amount, $reference, 'POS Sale');
+            $result = $this->mpesaService->forBusiness((int) $business_id)->stkPush($phone, $amount, $reference, 'POS Sale');
 
             if (!isset($result['CheckoutRequestID'])) {
                 return response()->json([
@@ -145,7 +145,7 @@ class MpesaController extends Controller
             && $transaction->created_at->diffInSeconds(now()) >= self::QUERY_AFTER_SECONDS
             && method_exists($this->mpesaService, 'stkQuery')) {
             try {
-                $query = $this->mpesaService->stkQuery($transaction->checkout_request_id);
+                $query = $this->mpesaService->forBusiness((int) $business_id)->stkQuery($transaction->checkout_request_id);
 
                 // While Safaricom is still processing, the response has no ResultCode.
                 if (isset($query['ResultCode'])) {
@@ -177,8 +177,16 @@ class MpesaController extends Controller
     {
         $accepted = response()->json(['ResultCode' => 0, 'ResultDesc' => 'Accepted']);
 
-        $expected = (string) config('services.mpesa.callback_secret');
-        if ($expected === '' || !hash_equals($expected, (string) $secret)) {
+        $ownerBusiness = null;
+        $row = $secret ? DB::table('mpesa_settings')->where('callback_secret', (string) $secret)->first() : null;
+        if ($row) {
+            $ownerBusiness = (int) $row->business_id;
+            $valid = true;
+        } else {
+            $expected = (string) config('services.mpesa.callback_secret');
+            $valid = config('dantepos_mpesa.allow_env_fallback') && $expected !== '' && hash_equals($expected, (string) $secret);
+        }
+        if (!$valid) {
             Log::warning('M-Pesa callback rejected: invalid secret.');
 
             return response()->json(['ResultCode' => 1, 'ResultDesc' => 'Rejected'], 403);
@@ -200,7 +208,8 @@ class MpesaController extends Controller
                 (int) ($callback['ResultCode'] ?? -1),
                 $callback['ResultDesc'] ?? null,
                 $items,
-                $request->getContent()
+                $request->getContent(),
+                $ownerBusiness
             );
         } catch (\Throwable $e) {
             // The STK query fallback in status() will recover this payment.
@@ -213,15 +222,21 @@ class MpesaController extends Controller
     /**
      * Apply a payment result exactly once. Safe against duplicate and late callbacks.
      */
-    private function applyResult(string $checkoutRequestId, int $resultCode, ?string $resultDesc, Collection $items, ?string $rawPayload = null): void
+    private function applyResult(string $checkoutRequestId, int $resultCode, ?string $resultDesc, Collection $items, ?string $rawPayload = null, ?int $businessId = null): void
     {
-        DB::transaction(function () use ($checkoutRequestId, $resultCode, $resultDesc, $items, $rawPayload) {
+        DB::transaction(function () use ($checkoutRequestId, $resultCode, $resultDesc, $items, $rawPayload, $businessId) {
             $transaction = MpesaTransaction::where('checkout_request_id', $checkoutRequestId)
                 ->lockForUpdate()
                 ->first();
 
             if (!$transaction) {
                 Log::warning('M-Pesa result for unknown CheckoutRequestID ' . $checkoutRequestId);
+
+                return;
+            }
+
+            if ($businessId !== null && (int) $transaction->business_id !== $businessId) {
+                Log::warning('M-Pesa result for another business ignored: ' . $checkoutRequestId);
 
                 return;
             }

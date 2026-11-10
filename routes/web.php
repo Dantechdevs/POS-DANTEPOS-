@@ -298,6 +298,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     // Kenyan payment channels and bank accounts
     Route::post('/dantepos-payments/channel/{channel}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'saveChannel'])->name('dantepos.payments.channel');
     Route::post('/dantepos-payments/mpesa', [\App\Http\Controllers\DanteMpesaSettingsController::class, 'save'])->name('dantepos.payments.mpesa');
+    Route::post('/dantepos-payments/mpesa-credentials', [\App\Http\Controllers\DanteMpesaCredentialsController::class, 'save'])->name('dantepos.payments.mpesa.credentials');
     Route::post('/dantepos-payments/banks', [\App\Http\Controllers\DantePaymentChannelsController::class, 'storeBank'])->name('dantepos.payments.bank.store');
     Route::post('/dantepos-payments/banks/{id}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'updateBank'])->whereNumber('id')->name('dantepos.payments.bank.update');
     Route::post('/dantepos-payments/banks/{id}/toggle', [\App\Http\Controllers\DantePaymentChannelsController::class, 'toggleBank'])->whereNumber('id')->name('dantepos.payments.bank.toggle');
