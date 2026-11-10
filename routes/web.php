@@ -107,7 +107,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/etims/retry-failed', [\App\Http\Controllers\EtimsInvoiceController::class, 'retryFailed'])->name('etims.retryFailed');
     Route::post('/etims/{id}/retry', [\App\Http\Controllers\EtimsInvoiceController::class, 'retry'])->name('etims.retry');
     Route::get('pos/payment/{id}', [SellPosController::class, 'edit'])->name('edit-pos-payment');
-    Route::post('mpesa/stkpush', [MpesaController::class, 'initiate'])->middleware('throttle:10,1')->name('mpesa.stkpush');
+    Route::post('mpesa/stkpush', [MpesaController::class, 'initiate'])->middleware('throttle:10,1')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':outbound')->name('mpesa.stkpush');
     Route::get('mpesa/status/{checkoutRequestId}', [MpesaController::class, 'status'])->name('mpesa.status');
     Route::get('service-staff-availability', [SellPosController::class, 'showServiceStaffAvailibility']);
     Route::get('pause-resume-service-staff-timer/{user_id}', [SellPosController::class, 'pauseResumeServiceStaffTimer']);
@@ -129,7 +129,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/calendar', [HomeController::class, 'getCalendar'])->name('calendar');
 
     Route::post('/test-email', [BusinessController::class, 'testEmailConfiguration']);
-    Route::post('/test-sms', [BusinessController::class, 'testSmsConfiguration']);
+    Route::post('/test-sms', [BusinessController::class, 'testSmsConfiguration'])->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':outbound');
     Route::get('/business/settings', [BusinessController::class, 'getBusinessSettings'])->name('business.getBusinessSettings');
     Route::post('/business/update', [BusinessController::class, 'postBusinessSettings'])->name('business.postBusinessSettings');
     Route::get('/user/profile', [UserController::class, 'getProfile'])->name('user.getProfile');
@@ -288,25 +288,27 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::get('/reports/reorder', [\App\Http\Controllers\ReorderController::class, 'index'])->name('reports.reorder');
     Route::get('/reports/expiry-watch', [\App\Http\Controllers\ExpiryWatchController::class, 'index'])->name('reports.expiry_watch');
     Route::get('/reports/margins', [\App\Http\Controllers\MarginReportController::class, 'index'])->name('reports.margins');
-    Route::get('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'index'])->name('dantepos.settings');
-    Route::post('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'update'])->name('dantepos.settings.update');
-    Route::post('/dantepos-settings/backup', [\App\Http\Controllers\DanteSettingsController::class, 'backupNow'])->name('dantepos.settings.backup');
-    Route::get('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'index'])->name('dantepos.payments');
-    Route::post('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'update'])->name('dantepos.payments.update');
-    Route::post('/dantepos-payments/kenya', [\App\Http\Controllers\DantePaymentController::class, 'kenyaPreset'])->name('dantepos.payments.kenya');
-    Route::post('/dantepos-payments/mpesa-setup', [\App\Http\Controllers\DanteMpesaSetupController::class, 'save'])->name('dantepos.payments.mpesa.setup');
-    Route::post('/dantepos-payments/mpesa-test', [\App\Http\Controllers\DanteMpesaSetupController::class, 'test'])->name('dantepos.payments.mpesa.test');
+    Route::get('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'index'])->name('dantepos.settings')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':settings');
+    Route::post('/dantepos-settings', [\App\Http\Controllers\DanteSettingsController::class, 'update'])->name('dantepos.settings.update')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':settings');
+    Route::post('/dantepos-settings/backup', [\App\Http\Controllers\DanteSettingsController::class, 'backupNow'])->name('dantepos.settings.backup')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':settings');
+    Route::get('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'index'])->name('dantepos.payments')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments', [\App\Http\Controllers\DantePaymentController::class, 'update'])->name('dantepos.payments.update')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/kenya', [\App\Http\Controllers\DantePaymentController::class, 'kenyaPreset'])->name('dantepos.payments.kenya')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::get('/dantepos-reauth', [\App\Http\Controllers\DanteReauthController::class, 'show'])->name('dante.reauth');
+    Route::post('/dantepos-reauth', [\App\Http\Controllers\DanteReauthController::class, 'check'])->middleware('throttle:5,1')->name('dante.reauth.check');
+    Route::post('/dantepos-payments/mpesa-setup', [\App\Http\Controllers\DanteMpesaSetupController::class, 'save'])->name('dantepos.payments.mpesa.setup')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/mpesa-test', [\App\Http\Controllers\DanteMpesaSetupController::class, 'test'])->name('dantepos.payments.mpesa.test')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
 
     // Kenyan payment channels and bank accounts
-    Route::post('/dantepos-payments/channel/{channel}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'saveChannel'])->name('dantepos.payments.channel');
-    Route::post('/dantepos-payments/mpesa', [\App\Http\Controllers\DanteMpesaSettingsController::class, 'save'])->name('dantepos.payments.mpesa');
-    Route::post('/dantepos-payments/mpesa-credentials', [\App\Http\Controllers\DanteMpesaCredentialsController::class, 'save'])->name('dantepos.payments.mpesa.credentials');
-    Route::post('/dantepos-payments/banks', [\App\Http\Controllers\DantePaymentChannelsController::class, 'storeBank'])->name('dantepos.payments.bank.store');
-    Route::post('/dantepos-payments/banks/{id}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'updateBank'])->whereNumber('id')->name('dantepos.payments.bank.update');
-    Route::post('/dantepos-payments/banks/{id}/toggle', [\App\Http\Controllers\DantePaymentChannelsController::class, 'toggleBank'])->whereNumber('id')->name('dantepos.payments.bank.toggle');
-    Route::post('/dantepos-payments/banks/{id}/delete', [\App\Http\Controllers\DantePaymentChannelsController::class, 'deleteBank'])->whereNumber('id')->name('dantepos.payments.bank.delete');
-    Route::post('/dantepos-settings/sms-test', [\App\Http\Controllers\DanteSettingsController::class, 'smsTest'])->name('dantepos.settings.sms');
-    Route::post('/dantepos-settings/backup-schedule', [\App\Http\Controllers\DanteSettingsController::class, 'backupSchedule'])->name('dantepos.settings.backup_schedule');
+    Route::post('/dantepos-payments/channel/{channel}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'saveChannel'])->name('dantepos.payments.channel')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/mpesa', [\App\Http\Controllers\DanteMpesaSettingsController::class, 'save'])->name('dantepos.payments.mpesa')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/mpesa-credentials', [\App\Http\Controllers\DanteMpesaCredentialsController::class, 'save'])->name('dantepos.payments.mpesa.credentials')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/banks', [\App\Http\Controllers\DantePaymentChannelsController::class, 'storeBank'])->name('dantepos.payments.bank.store')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/banks/{id}', [\App\Http\Controllers\DantePaymentChannelsController::class, 'updateBank'])->whereNumber('id')->name('dantepos.payments.bank.update')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/banks/{id}/toggle', [\App\Http\Controllers\DantePaymentChannelsController::class, 'toggleBank'])->whereNumber('id')->name('dantepos.payments.bank.toggle')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-payments/banks/{id}/delete', [\App\Http\Controllers\DantePaymentChannelsController::class, 'deleteBank'])->whereNumber('id')->name('dantepos.payments.bank.delete')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':payments');
+    Route::post('/dantepos-settings/sms-test', [\App\Http\Controllers\DanteSettingsController::class, 'smsTest'])->name('dantepos.settings.sms')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':settings');
+    Route::post('/dantepos-settings/backup-schedule', [\App\Http\Controllers\DanteSettingsController::class, 'backupSchedule'])->name('dantepos.settings.backup_schedule')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':settings');
     Route::get('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'index'])->name('giftcards.index');
     Route::post('/gift-cards', [\App\Http\Controllers\GiftCardController::class, 'store'])->name('giftcards.store');
     Route::get('/gift-cards/balance', [\App\Http\Controllers\GiftCardController::class, 'balance'])->name('giftcards.balance');
@@ -316,7 +318,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/gift-cards/{id}/adjust', [\App\Http\Controllers\GiftCardController::class, 'adjust'])->whereNumber('id')->name('giftcards.adjust');
     Route::post('/gift-cards/{id}/void', [\App\Http\Controllers\GiftCardController::class, 'void'])->whereNumber('id')->name('giftcards.void');
     Route::post('/gift-cards/{id}/extend', [\App\Http\Controllers\GiftCardController::class, 'extend'])->whereNumber('id')->name('giftcards.extend');
-    Route::post('/gift-cards/{id}/sms', [\App\Http\Controllers\GiftCardController::class, 'sms'])->whereNumber('id')->name('giftcards.sms');
+    Route::post('/gift-cards/{id}/sms', [\App\Http\Controllers\GiftCardController::class, 'sms'])->whereNumber('id')->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':outbound')->name('giftcards.sms');
     Route::get('/stocktakes', [\App\Http\Controllers\StocktakeController::class, 'index'])->name('stocktakes.index');
     Route::post('/stocktakes', [\App\Http\Controllers\StocktakeController::class, 'store'])->name('stocktakes.store');
     Route::get('/stocktakes/{id}', [\App\Http\Controllers\StocktakeController::class, 'show'])->name('stocktakes.show');
@@ -452,7 +454,7 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
 
     Route::resource('notification-templates', NotificationTemplateController::class)->only(['index', 'store']);
     Route::get('notification/get-template/{transaction_id}/{template_for}', [NotificationController::class, 'getTemplate']);
-    Route::post('notification/send', [NotificationController::class, 'send']);
+    Route::post('notification/send', [NotificationController::class, 'send'])->middleware(\App\Http\Middleware\DanteSensitiveGate::class.':outbound');
 
     Route::post('/purchase-return/update', [CombinedPurchaseReturnController::class, 'update']);
     Route::get('/purchase-return/edit/{id}', [CombinedPurchaseReturnController::class, 'edit']);
