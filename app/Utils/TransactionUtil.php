@@ -778,7 +778,8 @@ class TransactionUtil extends Util
                         }
                     }
 
-                    $payments_formatted[] = new TransactionPayment($payment_data);
+                    $mpesa_extra = \App\Services\MpesaSaleGuard::inspect($payment, $transaction, (float) $payment_amount);
+                    $payments_formatted[] = new TransactionPayment(array_merge($payment_data, $mpesa_extra));
 
                     if (! empty($payment['denominations'])) {
                         $denominations[$payment_ref_no] = $payment['denominations'];
