@@ -29,3 +29,4 @@ npm-debug.log
 ngrok.exe
 mpesa_diff.txt
 *.zip
+*.sql
