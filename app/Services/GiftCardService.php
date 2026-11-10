@@ -150,4 +150,64 @@ class GiftCardService
             'note' => $note,
         ]);
     }
+
+    /**
+     * Make the card match this payment. Safe to call any number of times for the same payment:
+     * it compares what the ledger says was deducted with what the payment should have deducted.
+     */
+    public static function sync($tp, bool $deleted = false): void
+    {
+        if (empty($tp->id)) {
+            return;
+        }
+
+        $net = round(-1 * (float) DB::table('gift_card_transactions')
+            ->where('transaction_payment_id', $tp->id)
+            ->whereIn('type', ['redeem', 'restore'])
+            ->sum('amount'), 4);
+
+        $code = self::normalize($tp->gift_card_code);
+        $wanted = 0.0;
+        if (! $deleted && $tp->method === 'gift_card' && empty($tp->is_return) && self::isSale($tp)) {
+            $wanted = round((float) $tp->amount, 4);
+        }
+
+        $lastCode = null;
+        if ($net > 0.0001) {
+            $lastCode = DB::table('gift_card_transactions as t')
+                ->join('gift_cards as g', 'g.id', '=', 't.gift_card_id')
+                ->where('t.transaction_payment_id', $tp->id)
+                ->where('t.type', 'redeem')
+                ->orderByDesc('t.id')
+                ->value('g.code');
+        }
+
+        // Money sits on a different card than the payment names now, or the payment is gone: give it all back.
+        if ($net > 0.0001 && $lastCode && ($wanted <= 0 || $code !== $lastCode)) {
+            self::restore(self::cardRef($tp, $lastCode), $net, 'Payment changed or removed');
+            $net = 0.0;
+        }
+
+        $delta = round($wanted - $net, 4);
+        if ($delta > 0.0001) {
+            self::redeem($tp, $delta);
+        } elseif ($delta < -0.0001) {
+            self::restore(self::cardRef($tp, $lastCode ?: $code), -$delta, 'Payment reduced');
+        }
+    }
+
+    private static function cardRef($tp, string $code): object
+    {
+        return (object) [
+            'id' => $tp->id,
+            'transaction_id' => $tp->transaction_id,
+            'business_id' => $tp->business_id,
+            'gift_card_code' => $code,
+        ];
+    }
+
+    private static function isSale($tp): bool
+    {
+        return DB::table('transactions')->where('id', $tp->transaction_id)->value('type') === 'sell';
+    }
 }
