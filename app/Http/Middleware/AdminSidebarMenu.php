@@ -925,8 +925,15 @@ class AdminSidebarMenu
                         if (auth()->user()->can('dantepos.settings')) {
                             $sub->url(
                                 url('/dantepos-settings'),
-                                'DantePOS Settings',
+                                'SMS Settings',
                                 ['icon' => '', 'active' => request()->segment(1) == 'dantepos-settings']
+                            );
+                        }
+                        if (auth()->user()->can('dantepos.settings')) {
+                            $sub->url(
+                                url('/dantepos-payments'),
+                                'Payment Configurations',
+                                ['icon' => '', 'active' => request()->segment(1) == 'dantepos-payments']
                             );
                         }
 
