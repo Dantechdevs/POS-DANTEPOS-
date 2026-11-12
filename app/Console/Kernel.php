@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('sync:push')->everyMinute()->withoutOverlapping()->when(fn () => config('sync.role') === 'satellite');
         if (config('backup.enabled', true)) {
             $schedule->command('db:backup')->dailyAt(config('backup.time', '21:00'));
         }

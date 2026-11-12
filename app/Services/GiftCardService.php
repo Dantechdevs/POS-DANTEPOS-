@@ -66,6 +66,10 @@ class GiftCardService
             if (($p['method'] ?? '') !== 'gift_card') {
                 continue;
             }
+            if (config('sync.role') === 'satellite') {
+                return 'Gift cards can only be redeemed on the online system. Take another payment method.';
+            }
+
             $amt = (float) $util->num_uf($p['amount'] ?? 0);
             if ($amt <= 0) {
                 continue;
