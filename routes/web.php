@@ -98,6 +98,7 @@ Route::middleware(['setData'])->group(function () {
         ->name('confirm_payment');
 
     Route::post('/mpesa/callback/{secret}', [MpesaController::class, 'callback'])->name('mpesa.callback');
+    Route::post('/sync/ping', [\App\Http\Controllers\SyncController::class, 'ping'])->middleware('throttle:60,1')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])->name('sync.ping');
 });
 
 //Routes for authenticated users only
