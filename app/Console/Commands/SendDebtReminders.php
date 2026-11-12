@@ -20,6 +20,12 @@ class SendDebtReminders extends Command
 
     public function handle(AfricasTalkingSms $sms)
     {
+        if (config('sync.role') === 'satellite') {
+            $this->warn('Skipped: this install is a satellite device. Only the primary server runs this job.');
+
+            return self::SUCCESS;
+        }
+
         $today = Carbon::today();
         $grace = (int) $this->option('grace');
         $every = (int) $this->option('every');

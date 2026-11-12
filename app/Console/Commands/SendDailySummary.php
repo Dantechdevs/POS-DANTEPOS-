@@ -23,6 +23,12 @@ class SendDailySummary extends Command
 
     public function handle(AfricasTalkingSms $sms)
     {
+        if (config('sync.role') === 'satellite') {
+            $this->warn('Skipped: this install is a satellite device. Only the primary server runs this job.');
+
+            return self::SUCCESS;
+        }
+
         $dry = (bool) $this->option('dry-run');
         $phones = array_values(array_filter(array_map('trim', explode(',', (string) ($this->option('to') ?: config('summary.phones'))))));
 
