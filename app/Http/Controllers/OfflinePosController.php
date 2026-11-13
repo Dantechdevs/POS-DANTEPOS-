@@ -345,7 +345,7 @@ class OfflinePosController extends Controller
             ->join('products as p', 'p.id', '=', 'v.product_id')
             ->where('p.business_id', $bid)
             ->whereIn('v.id', $variationIds)
-            ->get(['v.id as variation_id', 'p.id as product_id', 'p.enable_stock', 'p.type', 'p.unit_id', 'p.tax as tax_id'])
+            ->get(['v.id as variation_id', 'p.id as product_id', 'p.enable_stock', 'p.type', 'p.unit_id', 'p.tax as tax_id', 'v.default_sell_price', 'v.sell_price_inc_tax'])
             ->keyBy('variation_id');
 
         if ($known->count() !== count($variationIds)) {
@@ -354,6 +354,7 @@ class OfflinePosController extends Controller
 
         $products = [];
         $total = 0.0;
+        $canEditPrice = (bool) auth()->user()->can('edit_product_price_from_pos_screen');
 
         foreach (array_values($lines) as $i => $l) {
             $info = $known[(int) $l['variation_id']];
@@ -363,6 +364,13 @@ class OfflinePosController extends Controller
 
             if ($qty <= 0 || $ex < 0 || $inc < 0) {
                 throw new \RuntimeException('An item has an invalid quantity or price.');
+            }
+
+            $srvInc = (float) ($info->sell_price_inc_tax > 0 ? $info->sell_price_inc_tax : $info->default_sell_price);
+            $srvEx = (float) $info->default_sell_price;
+
+            if (! $canEditPrice && ($inc < $srvInc - 0.01 || $ex < $srvEx - 0.01)) {
+                throw new \RuntimeException('An item is priced below the shop price. Refresh the catalog and sell again, or ask a manager.');
             }
 
             $products[$i] = [
