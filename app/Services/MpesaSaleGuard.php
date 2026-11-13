@@ -15,6 +15,10 @@ class MpesaSaleGuard
 {
     public static function inspect(array $payment, $transaction, float $amount): array
     {
+        if (config('sync.importing')) {
+            return []; // sync import: the PC already verified this payment
+        }
+
         if (($payment['method'] ?? '') !== 'mpesa'
             || ($transaction->type ?? '') !== 'sell'
             || ! empty($payment['is_return'])
