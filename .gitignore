@@ -17,8 +17,6 @@ npm-debug.log
 /public/uploads/invoice_logos
 /public/uploads/UltimatePOS
 /public/uploads/temp
-/public/css/
-/public/fonts/
 /public/images/
 /public/modules/
 /public/mix-manifest.json
@@ -29,3 +27,5 @@ npm-debug.log
 ngrok.exe
 mpesa_diff.txt
 *.zip
+*.sql
+.phpunit.result.cache

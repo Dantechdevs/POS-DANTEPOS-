@@ -20,6 +20,12 @@ class SendDebtReminders extends Command
 
     public function handle(AfricasTalkingSms $sms)
     {
+        if (config('sync.role') === 'satellite') {
+            $this->warn('Skipped: this install is a satellite device. Only the primary server runs this job.');
+
+            return self::SUCCESS;
+        }
+
         $today = Carbon::today();
         $grace = (int) $this->option('grace');
         $every = (int) $this->option('every');
@@ -39,6 +45,7 @@ class SendDebtReminders extends Command
             ->where('t.status', 'final')
             ->whereIn('t.payment_status', ['due', 'partial'])
             ->where('c.is_default', 0)
+            ->whereNotIn('t.business_id', \App\Services\DemoGuard::ids())
             ->whereNotNull('c.mobile')
             ->where('c.mobile', '<>', '')
             ->when($this->option('business'), fn ($q, $id) => $q->where('t.business_id', $id))

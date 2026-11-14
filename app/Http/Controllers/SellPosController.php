@@ -635,6 +635,9 @@ class SellPosController extends Controller
 
                 $this->transactionUtil->activityLog($transaction, 'added');
 
+                // sync: queue this sale for upload when running as a satellite
+                \App\Services\SyncOutbox::captureSale($transaction, $request);
+
                 
 
                 DB::commit();

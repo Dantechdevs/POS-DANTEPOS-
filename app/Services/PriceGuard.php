@@ -12,6 +12,10 @@ class PriceGuard
     /** Returns an error message if the sale must be blocked, otherwise null. */
     public static function violation(Request $request, $business_id): ?string
     {
+        if (config('pricing.guard_mode') === 'off') {
+            return null;
+        }
+
         if ($request->input('status') !== 'final') {
             return null;
         }

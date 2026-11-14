@@ -26,6 +26,27 @@ class MpesaService
         ]);
     }
 
+    public function forBusiness(int $businessId): self
+    {
+        $creds = MpesaCredentials::forBusiness($businessId);
+        if (! $creds) {
+            throw new \Exception('M-Pesa is not set up for this business. Add the Daraja details in Payment Configurations.');
+        }
+
+        $svc = clone $this;
+        $svc->config = $creds;
+        $svc->baseUrl = ($creds['env'] ?? 'sandbox') === 'production'
+            ? 'https://api.safaricom.co.ke'
+            : 'https://sandbox.safaricom.co.ke';
+        $svc->client = new Client([
+            'base_uri' => $svc->baseUrl,
+            'timeout' => 20,
+            'connect_timeout' => 8,
+        ]);
+
+        return $svc;
+    }
+
     public function getAccessToken()
     {
         $cacheKey = 'mpesa_token_' . md5($this->baseUrl . $this->config['consumer_key']);
@@ -70,7 +91,7 @@ class MpesaService
             'TransactionType' => $this->config['transaction_type'],
             'Amount' => (int) round($amount),
             'PartyA' => $this->normalizePhone($phone),
-            'PartyB' => $shortcode,
+            'PartyB' => config('services.mpesa.till_number') ?: $shortcode,
             'PhoneNumber' => $this->normalizePhone($phone),
             'CallBackURL' => $this->config['callback_url'],
             'AccountReference' => substr($accountReference, 0, 12),

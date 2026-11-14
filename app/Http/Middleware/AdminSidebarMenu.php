@@ -47,6 +47,15 @@ class AdminSidebarMenu
             <path d="M10 12h4v4h-4z" />
           </svg>', 'active' => request()->segment(1) == 'home'])->order(5);
 
+            // eTIMS invoices (KRA submission queue)
+            if (auth()->user()->can('business_settings.access')) {
+                $menu->url(
+                    route('etims.index'),
+                    'eTIMS Invoices',
+                    ['icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="tw-size-5 tw-shrink-0" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 7l1 0"/><path d="M9 13l6 0"/><path d="M13 17l2 0"/></svg>', 'active' => request()->segment(1) == 'etims']
+                )->order(52);
+            }
+
             //User management dropdown
             if (auth()->user()->can('user.view') || auth()->user()->can('user.create') || auth()->user()->can('roles.view')) {
                 $menu->dropdown(
@@ -560,14 +569,14 @@ class AdminSidebarMenu
                     url('/stocktakes'),
                     'Stocktake',
                     ['icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="tw-size-5 tw-shrink-0" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2"/><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/><path d="M9 14l2 2l4 -4"/></svg>', 'active' => request()->segment(1) == 'stocktakes']
-                );
+                )->order(41);
             }
             if (auth()->user()->can('giftcard.manage')) {
                 $menu->url(
                     url('/gift-cards'),
                     'Gift Cards',
                     ['icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="tw-size-5 tw-shrink-0" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z"/><path d="M12 8l0 13"/><path d="M19 12v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0 -5a4.8 8 0 0 1 4.5 5a4.8 8 0 0 1 4.5 -5a2.5 2.5 0 0 1 0 5"/></svg>', 'active' => request()->segment(1) == 'gift-cards']
-                );
+                )->order(42);
             }
 
             if (auth()->user()->can('purchase_n_sell_report.view') || auth()->user()->can('contacts_report.view')
@@ -866,6 +875,7 @@ class AdminSidebarMenu
                 auth()->user()->can('invoice_settings.access') ||
                 auth()->user()->can('tax_rate.view') ||
                 auth()->user()->can('tax_rate.create') ||
+                auth()->user()->can('dantepos.settings') ||
                 auth()->user()->can('access_package_subscriptions')) {
                 $menu->dropdown(
                     __('business.settings'),
@@ -909,6 +919,21 @@ class AdminSidebarMenu
                                 action([\App\Http\Controllers\TaxRateController::class, 'index']),
                                 __('tax_rate.tax_rates'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'tax-rates']
+                            );
+                        }
+
+                        if (auth()->user()->can('dantepos.settings')) {
+                            $sub->url(
+                                url('/dantepos-settings'),
+                                'SMS Settings',
+                                ['icon' => '', 'active' => request()->segment(1) == 'dantepos-settings']
+                            );
+                        }
+                        if (auth()->user()->can('dantepos.settings')) {
+                            $sub->url(
+                                url('/dantepos-payments'),
+                                'Payment Configurations',
+                                ['icon' => '', 'active' => request()->segment(1) == 'dantepos-payments']
                             );
                         }
 
