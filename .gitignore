@@ -30,3 +30,4 @@ ngrok.exe
 mpesa_diff.txt
 *.zip
 *.sql
+.phpunit.result.cache
