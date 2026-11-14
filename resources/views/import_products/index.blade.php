@@ -18,9 +18,9 @@
                 <div class="alert alert-danger alert-dismissible">
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
                     @if(!empty($notification['msg']))
-                        {{$notification['msg']}}
+                        {!! nl2br(e($notification['msg'])) !!}
                     @elseif(session('notification.msg'))
-                        {{ session('notification.msg') }}
+                        {!! nl2br(e(session('notification.msg'))) !!}
                     @endif
                 </div>
             </div>  
@@ -38,6 +38,9 @@
                                 {!! Form::label('name', __( 'product.file_to_import' ) . ':') !!}
                                 {!! Form::file('products_csv', ['accept'=> '.xls, .xlsx, .csv', 'required' => 'required']); !!}
                               </div>
+                            <div class="checkbox">
+                                <label><input type="checkbox" name="check_only" value="1"> Check only (do not save). Tick this to see every problem in the file first.</label>
+                            </div>
                         </div>
                         <div class="col-sm-4">
                         <br>
@@ -62,6 +65,10 @@
                 <strong>@lang('lang_v1.instruction_line1')</strong><br>
                     @lang('lang_v1.instruction_line2')
                     <br><br>
+                    <div class="alert alert-info">
+                        <strong>Barcodes:</strong> format the SKU column (column 6) as <strong>Text</strong> before you paste or scan into it, so leading zeros are kept.
+                        Each SKU must be different, and it should match the number printed on the product's barcode.
+                    </div>
                 <table class="table table-striped">
                     <tr>
                         <th>@lang('lang_v1.col_no')</th>

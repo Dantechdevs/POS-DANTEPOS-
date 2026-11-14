@@ -70,6 +70,22 @@ class ImportProductsController extends Controller
     }
 
     /**
+     * Reads a SKU or barcode cell as text. Numbers typed into Excel arrive as floats,
+     * so 6001234567890 must not become 6.0012345678E+12.
+     */
+    private function normalizeCode($value): string
+    {
+        if (is_int($value)) {
+            return (string) $value;
+        }
+        if (is_float($value)) {
+            return floor($value) == $value ? number_format($value, 0, '', '') : trim((string) $value);
+        }
+
+        return trim((string) $value);
+    }
+
+    /**
      * Imports the uploaded file to database.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -91,6 +107,9 @@ class ImportProductsController extends Controller
             ini_set('max_execution_time', 0);
             ini_set('memory_limit', -1);
 
+            //"Check only" mode: validate the whole file, then roll everything back
+            $check_only = $request->boolean('check_only');
+
             if ($request->hasFile('products_csv')) {
                 $file = $request->file('products_csv');
 
@@ -104,6 +123,9 @@ class ImportProductsController extends Controller
                 $default_profit_percent = $request->session()->get('business.default_profit_percent');
 
                 $formated_data = [];
+                $all_errors = [];
+                $seen_skus = [];
+                $skipped_combo_rows = [];
 
                 $is_valid = true;
                 $error_msg = '';
@@ -120,6 +142,12 @@ class ImportProductsController extends Controller
                 $business_locations = BusinessLocation::where('business_id', $business_id)->get();
                 DB::beginTransaction();
                 foreach ($imported_data as $key => $value) {
+
+                    //A row that failed on the previous pass is recorded here, so every bad row is reported together
+                    if (! $is_valid) {
+                        $all_errors[] = $error_msg;
+                        $is_valid = true;
+                    }
 
                     //Check if any column is missing
                     if (count($value) < 37) {
@@ -140,13 +168,16 @@ class ImportProductsController extends Controller
                     } else {
                         $is_valid = false;
                         $error_msg = "Product name is required in row no. $row_no";
-                        break;
+                        continue;
                     }
 
                     //image name
                     $image_name = trim($value[29]);
                     if (! empty($image_name)) {
-                        if (filter_var($image_name, FILTER_VALIDATE_URL)) {
+                        if (filter_var($image_name, FILTER_VALIDATE_URL) && $check_only) {
+                            //Check only: do not download the image
+                            $product_array['image'] = '';
+                        } elseif (filter_var($image_name, FILTER_VALIDATE_URL)) {
                             $source_image = file_get_contents($image_name);
 
                             $path = parse_url($image_name, PHP_URL_PATH);
@@ -195,7 +226,7 @@ class ImportProductsController extends Controller
                     } else {
                         $is_valid = false;
                         $error_msg = "Invalid value for MANAGE STOCK in row no. $row_no";
-                        break;
+                        continue;
                     }
 
                     //Add product type
@@ -203,11 +234,12 @@ class ImportProductsController extends Controller
                     if (in_array($product_type, ['single', 'variable'])) {
                         $product_array['type'] = $product_type;
                     } elseif ($product_type == 'combo') {
+                        $skipped_combo_rows[] = $row_no;
                         continue;
                     } else {
                         $is_valid = false;
                         $error_msg = "Invalid value for PRODUCT TYPE in row no. $row_no";
-                        break;
+                        continue;
                     }
 
                     //Add unit
@@ -223,12 +255,12 @@ class ImportProductsController extends Controller
                         } else {
                             $is_valid = false;
                             $error_msg = "Unit with name $unit_name not found in row no. $row_no. You can add unit from Products > Units";
-                            break;
+                            continue;
                         }
                     } else {
                         $is_valid = false;
                         $error_msg = "UNIT is required in row no. $row_no";
-                        break;
+                        continue;
                     }
 
                     //Add barcode type
@@ -240,7 +272,7 @@ class ImportProductsController extends Controller
                     } else {
                         $is_valid = false;
                         $error_msg = "$barcode_type barcode type is not valid in row no. $row_no. Please, check for allowed barcode types in the instructions";
-                        break;
+                        continue;
                     }
 
                     //Add Tax
@@ -256,7 +288,7 @@ class ImportProductsController extends Controller
                         } else {
                             $is_valid = false;
                             $error_msg = "Tax with name $tax_name in row no. $row_no not found. You can add tax from Settings > Tax Rates";
-                            break;
+                            continue;
                         }
                     }
 
@@ -267,7 +299,7 @@ class ImportProductsController extends Controller
                     } else {
                         $is_valid = false;
                         $error_msg = "Invalid value for Selling Price Tax Type in row no. $row_no";
-                        break;
+                        continue;
                     }
 
                     //Add alert quantity
@@ -308,9 +340,17 @@ class ImportProductsController extends Controller
                     }
 
                     //Add SKU
-                    $sku = trim($value[5]);
+                    $sku = $this->normalizeCode($value[5]);
                     if (! empty($sku)) {
                         $product_array['sku'] = $sku;
+                        //Check if the same SKU appears twice inside this file
+                        if (isset($seen_skus[$sku])) {
+                            $is_valid = false;
+                            $error_msg = "$sku SKU is repeated in row no. $row_no (first used in row no. {$seen_skus[$sku]})";
+                            continue;
+                        }
+                        $seen_skus[$sku] = $row_no;
+
                         //Check if product with same SKU already exist
                         $is_exist = Product::where('sku', $product_array['sku'])
                                         ->where('business_id', $business_id)
@@ -318,7 +358,7 @@ class ImportProductsController extends Controller
                         if ($is_exist) {
                             $is_valid = false;
                             $error_msg = "$sku SKU already exist in row no. $row_no";
-                            break;
+                            continue;
                         }
                     } else {
                         $product_array['sku'] = ' ';
@@ -347,7 +387,7 @@ class ImportProductsController extends Controller
                     } else {
                         $is_valid = false;
                         $error_msg = "Invalid value for ENABLE IMEI OR SERIAL NUMBER  in row no. $row_no";
-                        break;
+                        continue;
                     }
 
                     //Weight
@@ -373,7 +413,7 @@ class ImportProductsController extends Controller
                         if ($dpp_inc_tax == '' && $dpp_exc_tax == '') {
                             $is_valid = false;
                             $error_msg = "PURCHASE PRICE is required in row no. $row_no";
-                            break;
+                            continue;
                         } else {
                             $dpp_inc_tax = ($dpp_inc_tax != '') ? $dpp_inc_tax : 0;
                             $dpp_exc_tax = ($dpp_exc_tax != '') ? $dpp_exc_tax : 0;
@@ -405,7 +445,7 @@ class ImportProductsController extends Controller
                                 } else {
                                     $is_valid = false;
                                     $error_msg = "No location with name '$location_name' found in row no. $row_no";
-                                    break;
+                                    continue;
                                 }
                             } else {
                                 $location = BusinessLocation::where('business_id', $business_id)->first();
@@ -426,13 +466,13 @@ class ImportProductsController extends Controller
                         if (empty($variation_name)) {
                             $is_valid = false;
                             $error_msg = "VARIATION NAME is required in row no. $row_no";
-                            break;
+                            continue;
                         }
                         $variation_values_string = trim($value[15]);
                         if (empty($variation_values_string)) {
                             $is_valid = false;
                             $error_msg = "VARIATION VALUES are required in row no. $row_no";
-                            break;
+                            continue;
                         }
 
                         $variation_sku_string = trim($value[16]);
@@ -445,7 +485,7 @@ class ImportProductsController extends Controller
                         if (empty($dpp_inc_tax_string) && empty($dpp_exc_tax_string)) {
                             $is_valid = false;
                             $error_msg = "PURCHASE PRICE is required in row no. $row_no";
-                            break;
+                            continue;
                         }
 
                         //Variation values
@@ -524,7 +564,7 @@ class ImportProductsController extends Controller
                         if (count($same) != 1) {
                             $is_valid = false;
                             $error_msg = "Prices mismatched with VARIATION VALUES in row no. $row_no";
-                            break;
+                            continue;
                         }
                         $product_array['variation']['name'] = $variation_name;
 
@@ -570,7 +610,7 @@ class ImportProductsController extends Controller
                             if (count($product_array['variation']['variations']) != count($variation_os)) {
                                 $is_valid = false;
                                 $error_msg = "Opening Stock mismatched with VARIATION VALUES in row no. $row_no";
-                                break;
+                                continue;
                             }
 
                             if (! empty(trim($value[22]))) {
@@ -581,7 +621,7 @@ class ImportProductsController extends Controller
                                 if (empty($location)) {
                                     $is_valid = false;
                                     $error_msg = "No location with name '$location_name' found in row no. $row_no";
-                                    break;
+                                    continue;
                                 }
                             } else {
                                 $location = BusinessLocation::where('business_id', $business_id)->first();
@@ -605,7 +645,15 @@ class ImportProductsController extends Controller
                 }
 
                 if (! $is_valid) {
-                    throw new \Exception($error_msg);
+                    $all_errors[] = $error_msg;
+                }
+                if (! empty($all_errors)) {
+                    $shown = array_slice($all_errors, 0, 50);
+                    $msg = count($all_errors).' problem(s) found, so nothing was imported. Row numbers start at the first product row, under the header.'."\n".implode("\n", $shown);
+                    if (count($all_errors) > count($shown)) {
+                        $msg .= "\n...and ".(count($all_errors) - count($shown)).' more.';
+                    }
+                    throw new \Exception($msg);
                 }
 
                 if (! empty($formated_data)) {
@@ -688,9 +736,21 @@ class ImportProductsController extends Controller
                 }
             }
 
+            if ($check_only) {
+                DB::rollBack();
+                $output = ['success' => 1,
+                    'msg' => 'Check passed: '.count($formated_data ?? []).' product(s) are ready to import. Nothing was saved. Untick "Check only" and upload again to import.',
+                ];
+
+                return redirect('import-products')->with('status', $output);
+            }
+
             $output = ['success' => 1,
                 'msg' => __('product.file_imported_successfully'),
             ];
+            if (! empty($skipped_combo_rows)) {
+                $output['msg'] .= ' Combo products cannot be imported, so these rows were skipped: '.implode(', ', $skipped_combo_rows).'.';
+            }
 
             DB::commit();
         } catch (\Exception $e) {
