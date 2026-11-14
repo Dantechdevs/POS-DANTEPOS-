@@ -45,6 +45,7 @@ class SendDailySummary extends Command
 
         $businesses = DB::table('business')
             ->when($this->option('business'), fn ($q, $id) => $q->where('id', $id))
+            ->whereNotIn('id', \App\Services\DemoGuard::ids())
             ->get(['id', 'name', 'time_zone']);
 
         foreach ($businesses as $b) {
