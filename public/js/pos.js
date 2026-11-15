@@ -161,7 +161,7 @@ $(document).ready(function() {
         //Add Product
         $('#search_product')
             .autocomplete({
-                delay: 1000,
+                delay: 300,
                 source: function(request, response) {
                     var price_group = '';
                     var search_fields = [];

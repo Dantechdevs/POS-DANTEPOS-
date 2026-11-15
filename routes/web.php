@@ -194,6 +194,9 @@ Route::middleware(['setData', 'auth', 'SetSessionData', 'language', 'timezone', 
     Route::post('/products/get_product_variation_row', [ProductController::class, 'getProductVariationRow']);
     Route::post('/products/get_variation_template', [ProductController::class, 'getVariationTemplate']);
     Route::get('/products/get_variation_value_row', [ProductController::class, 'getVariationValueRow']);
+    Route::get('/products/smart-scanner', [\App\Http\Controllers\SmartScannerController::class, 'index']);
+    Route::post('/products/smart-scanner/lookup', [\App\Http\Controllers\SmartScannerController::class, 'lookup']);
+    Route::post('/products/smart-scanner/save', [\App\Http\Controllers\SmartScannerController::class, 'save']);
     Route::post('/products/check_product_sku', [ProductController::class, 'checkProductSku']);
     Route::post('/products/check_product_name', [ProductController::class, 'checkProductName']);
     Route::post('/products/validate_variation_skus', [ProductController::class, 'validateVaritionSkus']); //validates multiple skus at once
