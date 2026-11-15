@@ -1,4 +1,4 @@
-/* Till payment helpers: pinned change/balance strip, bigger M-Pesa button, "pay the rest" buttons.
+/* Till payment helpers: pinned "amount given + change/balance" strip, bigger M-Pesa button, "pay the rest" buttons.
    Display only. It never changes how a sale is calculated or saved. */
 (function ($) {
     'use strict';
@@ -7,11 +7,14 @@
     var CSS = '' +
     '.pos-express-finalize[data-pay_method="mpesa"]{background:#0a7d3b!important;color:#fff!important;border-radius:8px;' +
     'min-width:8.5rem;height:54px;display:inline-flex!important;flex-direction:row!important;align-items:center;justify-content:center;gap:8px;' +
-    'font-weight:700;font-size:16px;padding:6px 12px;margin:0 6px;box-shadow:0 2px 0 rgba(0,0,0,.15)}' +
+    'font-weight:700;font-size:16px;padding:6px 12px;margin:0 6px;box-shadow:0 2px 0 rgba(0,0,0,.15);white-space:nowrap}' +
     '.pos-express-finalize[data-pay_method="mpesa"]:hover{background:#086a32!important}' +
     '.pos-express-finalize[data-pay_method="mpesa"] img{background:#fff;border-radius:4px;padding:2px 6px;height:26px!important}' +
-    '#dp-pay-strip{float:left;margin:0;padding:8px 16px;border-radius:8px;font-size:22px;font-weight:700;line-height:1.2;color:#fff;background:#64748b}' +
-    '#dp-pay-strip.change{background:#16a34a}#dp-pay-strip.due{background:#dc2626}#dp-pay-strip.ok{background:#0f766e}' +
+    '#dp-pay-strip{float:left;display:flex;gap:8px;align-items:center;margin:0}' +
+    '#dp-pay-strip span{display:inline-block;padding:7px 14px;border-radius:6px;font-size:16px;font-weight:700;line-height:1.2;color:#fff;white-space:nowrap}' +
+    '#dp-pay-strip .dp-given{background:#334155}' +
+    '#dp-pay-strip .dp-status{background:#64748b}' +
+    '#dp-pay-strip .dp-status.change{background:#16a34a}#dp-pay-strip .dp-status.due{background:#dc2626}#dp-pay-strip .dp-status.ok{background:#0f766e}' +
     '#dp-rest{margin-top:10px}#dp-rest .btn{font-weight:700;margin-right:8px;border-radius:6px}';
 
     function num(t) { return parseFloat(String(t || '').replace(/[^0-9.]/g, '')) || 0; }
@@ -21,21 +24,22 @@
     function ensureUi() {
         if (!$('#dp-css').length) { $('head').append('<style id="dp-css">' + CSS + '</style>'); }
 
-        // M-Pesa express button: add a text label next to the logo
         $('.pos-express-finalize[data-pay_method="mpesa"]').each(function () {
             if (!$(this).find('.dp-mp').length) { $(this).append('<span class="dp-mp">M-PESA</span>'); }
         });
 
         var $m = $modal();
         if ($m.length && !$('#dp-pay-strip').length) {
-            $m.find('.modal-footer').first().prepend('<div id="dp-pay-strip">Enter the amount received</div>');
+            $m.find('.modal-footer').first().prepend(
+                '<div id="dp-pay-strip"><span class="dp-given">Given: 0.00</span><span class="dp-status">Enter the amount</span></div>'
+            );
         }
         if ($('#add-payment-row').length && !$('#dp-rest').length) {
             $('#add-payment-row').after(
                 '<div id="dp-rest">' +
                 '<button type="button" class="btn btn-success" id="dp-rest-mpesa">Rest by M-Pesa</button>' +
                 '<button type="button" class="btn btn-default" id="dp-rest-cash">Rest by Cash</button>' +
-                '<small class="text-muted">Type the first amount above, then press one of these for the remaining balance.</small></div>'
+                '<small class="text-muted">Type the first amount, then press one for the balance.</small></div>'
             );
         }
     }
@@ -43,15 +47,17 @@
     function refreshStrip() {
         var $m = $modal(), $s = $('#dp-pay-strip');
         if (!$m.length || !$s.length || !$m.is(':visible')) { return; }
-        var change = num($m.find('span.change_return_span').first().text());
-        var due = num($m.find('span.balance_due').first().text());
-        var paying = num($m.find('span.total_paying').first().text());
         var changeTxt = $m.find('span.change_return_span').first().text();
         var dueTxt = $m.find('span.balance_due').first().text();
-        if (change > 0.04) { $s.attr('class', 'change').text('Change to give: ' + changeTxt); }
-        else if (due > 0.04) { $s.attr('class', 'due').text('Still due: ' + dueTxt); }
-        else if (paying > 0) { $s.attr('class', 'ok').text('Paid in full, no change'); }
-        else { $s.attr('class', '').text('Enter the amount received'); }
+        var givenTxt = $m.find('span.total_paying').first().text();
+        var change = num(changeTxt), due = num(dueTxt), paying = num(givenTxt);
+
+        $s.find('.dp-given').text('Given: ' + (givenTxt || '0.00'));
+        var $st = $s.find('.dp-status');
+        if (change > 0.04) { $st.attr('class', 'dp-status change').text('Change: ' + changeTxt); }
+        else if (due > 0.04) { $st.attr('class', 'dp-status due').text('Still due: ' + dueTxt); }
+        else if (paying > 0) { $st.attr('class', 'dp-status ok').text('Paid in full'); }
+        else { $st.attr('class', 'dp-status').text('Enter the amount'); }
     }
 
     function payRest(method) {
