@@ -43,19 +43,20 @@
       @endforeach
     @endif
   </table>
-  @if(!empty($receipt_details->show_reward_point))
+  @if(!empty($receipt_details->pd_points_name) && ((float) ($receipt_details->pd_points_earned ?? 0) > 0 || (float) ($receipt_details->pd_points_balance ?? 0) > 0))
     <div class="hr"></div>
-    @php
-      $earned = $receipt_details->reward_points ?? ($receipt_details->rp_earned ?? 0);
-      $bal = $receipt_details->total_points ?? ($receipt_details->reward_balance ?? 0);
-    @endphp
-    <div class="c b">Rahisi Points: {{ number_format((float) $earned, 1) }} &nbsp; Balance: {{ number_format((float) $bal, 1) }}</div>
+    @if((float) ($receipt_details->pd_points_earned ?? 0) > 0)
+      <div class="c b">{{ $receipt_details->pd_points_name }} earned: {{ $receipt_details->pd_points_earned }}</div>
+    @endif
+    <div class="c b">{{ $receipt_details->pd_points_name }} balance: {{ $receipt_details->pd_points_balance }}</div>
+    @if(!empty($receipt_details->pd_points_expiry))
+      <div class="c">Points expire {{ $receipt_details->pd_points_expiry }}</div>
+    @endif
   @endif
   <div class="hr"></div>
   <div class="c">
     Prices inclusive of VAT where applicable<br>
-    {{ $receipt_details->footer_text ?? 'Thank you for shopping at Rahisi Supermarket' }}<br>
-    Goods once sold are not returnable
+    {{ $receipt_details->pd_footer_base ?? ($receipt_details->footer_text ?? 'Thank you for shopping at Rahisi Supermarket') }}
   </div>
   <div class="c" style="margin-top:4px;text-align:center">
     <img style="height:28px;max-width:70mm;display:block;margin:0 auto" src="data:image/png;base64,{{ DNS1D::getBarcodePNG($receipt_details->invoice_no, 'C128', 1.5, 28) }}">

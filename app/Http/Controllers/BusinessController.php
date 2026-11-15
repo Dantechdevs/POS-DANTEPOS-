@@ -384,6 +384,14 @@ class BusinessController extends Controller
                 $business_details['enable_rp'] = 0;
             }
 
+            //Festive points settings
+            $business_details['rp_season_only'] = $request->input('rp_season_only') == 1 ? 1 : 0;
+            $business_details['rp_points_per_1000'] = $request->filled('rp_points_per_1000') ? max(0, (float) $request->input('rp_points_per_1000')) : null;
+            foreach (['rp_season_start', 'rp_season_end', 'rp_expiry_date'] as $rp_key) {
+                $rp_val = $request->input($rp_key);
+                $business_details[$rp_key] = (! empty($rp_val) && strtotime($rp_val)) ? \Carbon::parse($rp_val)->format('Y-m-d') : null;
+            }
+
             $business_details['amount_for_unit_rp'] = ! empty($business_details['amount_for_unit_rp']) ? $this->businessUtil->num_uf($business_details['amount_for_unit_rp']) : 1;
             $business_details['min_order_total_for_rp'] = ! empty($business_details['min_order_total_for_rp']) ? $this->businessUtil->num_uf($business_details['min_order_total_for_rp']) : 1;
             $business_details['redeem_amount_per_unit_rp'] = ! empty($business_details['redeem_amount_per_unit_rp']) ? $this->businessUtil->num_uf($business_details['redeem_amount_per_unit_rp']) : 1;

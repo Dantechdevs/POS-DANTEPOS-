@@ -41,6 +41,47 @@
         </div>
     </div>
    </div>
+<div class="row well">
+    <div class="col-sm-12">
+        <h4>Festive season points</h4>
+        <p class="help-block">Award points only during a festive season. If "Points per 1,000 spent" is empty, the "Amount spent for one point" setting above is used instead.</p>
+    </div>
+    <div class="col-sm-4">
+        <div class="form-group">
+            <label for="rp_points_per_1000">Points per 1,000 spent:</label>
+            <input type="number" step="0.01" min="0" name="rp_points_per_1000" id="rp_points_per_1000" class="form-control" value="{{ $business->rp_points_per_1000 }}" placeholder="e.g. 5">
+        </div>
+    </div>
+    <div class="col-sm-8">
+        <div class="form-group">
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="rp_season_only" value="1" @if(!empty($business->rp_season_only)) checked @endif> Award points only during the festive season
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div class="col-sm-4">
+        <div class="form-group">
+            <label for="rp_season_start">Season starts:</label>
+            <input type="date" name="rp_season_start" id="rp_season_start" class="form-control" value="{{ !empty($business->rp_season_start) ? \Carbon::parse($business->rp_season_start)->format('Y-m-d') : '' }}">
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="form-group">
+            <label for="rp_season_end">Season ends:</label>
+            <input type="date" name="rp_season_end" id="rp_season_end" class="form-control" value="{{ !empty($business->rp_season_end) ? \Carbon::parse($business->rp_season_end)->format('Y-m-d') : '' }}">
+        </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="form-group">
+            <label for="rp_expiry_date">Points expire on:</label>
+            <input type="date" name="rp_expiry_date" id="rp_expiry_date" class="form-control" value="{{ !empty($business->rp_expiry_date) ? \Carbon::parse($business->rp_expiry_date)->format('Y-m-d') : '' }}">
+            <p class="help-block">Unspent points are cleared the day after this date. Set it again each year.</p>
+        </div>
+    </div>
+</div>
    <div class="row well">
     <div class="col-sm-12">
         <h4>@lang('lang_v1.redeem_points_setting'):</h4>
