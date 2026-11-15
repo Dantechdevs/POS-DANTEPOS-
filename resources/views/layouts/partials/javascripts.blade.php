@@ -246,3 +246,7 @@
 @if (request()->is('products/smart-scanner'))
 <script src="{{ asset('js/smart-scanner-ocr.js?v=' . $asset_v) }}"></script>
 @endif
+
+@if (request()->is('pos/create') || request()->is('pos/*/edit'))
+<script src="{{ asset('js/pos-payments.js?v=' . $asset_v) }}"></script>
+@endif
