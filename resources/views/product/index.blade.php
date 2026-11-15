@@ -175,7 +175,7 @@
                                 @endif
                                 @can('product.create')
 
-                                    <a id="dp-import-btn" class="tw-dw-btn tw-bg-gradient-to-r tw-from-emerald-600 tw-to-green-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full pull-right tw-m-2"
+                                    <a id="dp-import-btn" class="tw-dw-btn tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full pull-right tw-m-2"
                                         href="{{ url('/import-products') }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
