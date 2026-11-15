@@ -242,3 +242,7 @@
 
     });
 </script>
+
+@if (request()->is('products/smart-scanner'))
+<script src="{{ asset('js/smart-scanner-ocr.js?v=' . $asset_v) }}"></script>
+@endif

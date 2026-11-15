@@ -64,7 +64,7 @@ class ProductLookupService
                 return $r;
             }
             if ($r['status'] === 'unavailable') {
-                $unavailable = true;
+                $unavailable = $unavailable || $endpoint === self::ENDPOINTS[0];
             }
         }
 
