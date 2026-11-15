@@ -24,7 +24,14 @@ class ProductLookupService
     const USER_AGENT = 'DantePOS-SmartScanner/1.0';
 
     // Pictures are only copied from Open Food Facts' own image servers.
-    const IMAGE_HOSTS = ['images.openfoodfacts.org', 'static.openfoodfacts.org'];
+    const IMAGE_HOSTS = ['images.openfoodfacts.org', 'static.openfoodfacts.org', 'images.openbeautyfacts.org', 'static.openbeautyfacts.org', 'images.openproductsfacts.org', 'static.openproductsfacts.org'];
+
+    // Tried in this order. The first one that knows the barcode wins.
+    const ENDPOINTS = [
+        'https://world.openfoodfacts.org/api/v2/product/',
+        'https://world.openbeautyfacts.org/api/v2/product/',
+        'https://world.openproductsfacts.org/api/v2/product/',
+    ];
 
     const MAX_IMAGE_BYTES = 2097152; // 2 MB
 
@@ -50,13 +57,29 @@ class ProductLookupService
 
     public function find(string $code): array
     {
+        $unavailable = false;
+        foreach (self::ENDPOINTS as $endpoint) {
+            $r = $this->findIn($code, $endpoint);
+            if ($r['status'] === 'found') {
+                return $r;
+            }
+            if ($r['status'] === 'unavailable') {
+                $unavailable = true;
+            }
+        }
+
+        return ['status' => $unavailable ? 'unavailable' : 'not_found', 'data' => null];
+    }
+
+    public function findIn(string $code, string $endpoint): array
+    {
         $none = ['status' => 'not_found', 'data' => null];
 
         if (! self::isLookupable($code)) {
             return $none;
         }
 
-        $key = 'smartscan.off.'.$code;
+        $key = 'smartscan.'.md5($endpoint).'.'.$code;
 
         try {
             $cached = Cache::get($key);
@@ -71,7 +94,7 @@ class ProductLookupService
             $response = Http::timeout(6)
                 ->withHeaders(['User-Agent' => self::USER_AGENT])
                 ->withOptions(['allow_redirects' => false])
-                ->get(self::ENDPOINT.$code.'.json', ['fields' => self::FIELDS]);
+                ->get($endpoint.$code.'.json', ['fields' => self::FIELDS]);
         } catch (\Throwable $e) {
             Log::warning('SmartScanner lookup failed: '.$e->getMessage());
 
