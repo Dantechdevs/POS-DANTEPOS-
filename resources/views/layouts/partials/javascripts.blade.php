@@ -250,3 +250,11 @@
 @if (request()->is('pos/create') || request()->is('pos/*/edit'))
 <script src="{{ asset('js/pos-payments.js?v=' . $asset_v) }}"></script>
 @endif
+
+@if (request()->is('pos/create') || request()->is('pos/*/edit'))
+<script src="{{ asset('js/pos-cash.js?v=' . $asset_v) }}"></script>
+@endif
+
+@if (request()->is('products/smart-scanner'))
+<script src="{{ asset('js/smart-scanner-guard.js?v=' . $asset_v) }}"></script>
+@endif
