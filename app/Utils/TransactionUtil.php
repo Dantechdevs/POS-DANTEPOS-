@@ -111,7 +111,7 @@ class TransactionUtil extends Util
             'recur_repetitions' => ! empty($input['recur_repetitions']) ? $input['recur_repetitions'] : 0,
             'order_addresses' => ! empty($input['order_addresses']) ? $input['order_addresses'] : null,
             'sub_type' => ! empty($input['sub_type']) ? $input['sub_type'] : null,
-            'rp_earned' => $input['status'] == 'final' ? $this->calculateRewardPoints($business_id, $final_total) : 0,
+            'rp_earned' => $input['status'] == 'final' ? $this->calculateRewardPoints($business_id, $final_total, $input['transaction_date'] ?? null) : 0,
             'rp_redeemed' => ! empty($input['rp_redeemed']) ? $input['rp_redeemed'] : 0,
             'rp_redeemed_amount' => ! empty($input['rp_redeemed_amount']) ? $input['rp_redeemed_amount'] : 0,
             'is_created_from_api' => ! empty($input['is_created_from_api']) ? 1 : 0,
@@ -232,7 +232,7 @@ class TransactionUtil extends Util
             'subscription_repeat_on' => ! empty($input['subscription_repeat_on']) ? $input['subscription_repeat_on'] : null,
             'recur_repetitions' => ! empty($input['recur_repetitions']) ? $input['recur_repetitions'] : 0,
             'order_addresses' => ! empty($input['order_addresses']) ? $input['order_addresses'] : null,
-            'rp_earned' => $input['status'] == 'final' ? $this->calculateRewardPoints($business_id, $final_total) : 0,
+            'rp_earned' => $input['status'] == 'final' ? $this->calculateRewardPoints($business_id, $final_total, $input['transaction_date'] ?? null) : 0,
             'rp_redeemed' => ! empty($input['rp_redeemed']) ? $input['rp_redeemed'] : 0,
             'rp_redeemed_amount' => ! empty($input['rp_redeemed_amount']) ? $input['rp_redeemed_amount'] : 0,
             'types_of_service_id' => ! empty($input['types_of_service_id']) ? $input['types_of_service_id'] : null,
@@ -4765,7 +4765,7 @@ class TransactionUtil extends Util
      *
      * @return int
      */
-    public function calculateRewardPoints($business_id, $total)
+    public function calculateRewardPoints($business_id, $total, $date = null)
     {
         if (session()->has('business')) {
             $business = session()->get('business');
@@ -4779,9 +4779,24 @@ class TransactionUtil extends Util
             if ($business->min_order_total_for_rp > $total) {
                 return $total_points;
             }
-            $amount_per_unit_point = $business->amount_for_unit_rp;
+            //Festive season: points are only awarded for sales inside the season window
+            if (! empty($business->rp_season_only)) {
+                $tz = ! empty($business->time_zone) ? $business->time_zone : config('app.timezone');
+                $sale_day = (! empty($date) && strtotime($date)) ? \Carbon::parse($date)->format('Y-m-d') : \Carbon::now($tz)->format('Y-m-d');
+                $season_start = ! empty($business->rp_season_start) ? \Carbon::parse($business->rp_season_start)->format('Y-m-d') : null;
+                $season_end = ! empty($business->rp_season_end) ? \Carbon::parse($business->rp_season_end)->format('Y-m-d') : null;
 
-            $total_points = floor($total / $amount_per_unit_point);
+                if (empty($season_start) || empty($season_end) || $sale_day < $season_start || $sale_day > $season_end) {
+                    return 0;
+                }
+            }
+
+            if (! empty($business->rp_points_per_1000) && $business->rp_points_per_1000 > 0) {
+                $total_points = floor(($total * $business->rp_points_per_1000) / 1000);
+            } else {
+                $amount_per_unit_point = $business->amount_for_unit_rp;
+                $total_points = floor($total / $amount_per_unit_point);
+            }
 
             if (! empty($business->max_rp_per_order) && $business->max_rp_per_order < $total_points) {
                 $total_points = $business->max_rp_per_order;
