@@ -175,6 +175,17 @@
                                 @endif
                                 @can('product.create')
 
+                                    <a id="dp-import-btn" class="tw-dw-btn tw-bg-gradient-to-r tw-from-emerald-600 tw-to-green-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full pull-right tw-m-2"
+                                        href="{{ url('/import-products') }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                            <path d="M7 9l5 -5l5 5" />
+                                            <path d="M12 4l0 12" />
+                                        </svg>
+                                        Import
+                                    </a>
                                     <a class="tw-dw-btn tw-bg-gradient-to-r tw-from-indigo-600 tw-to-blue-500 tw-font-bold tw-text-white tw-border-none tw-rounded-full pull-right tw-m-2"
                                         href="{{ action([\App\Http\Controllers\ProductController::class, 'create']) }}">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
