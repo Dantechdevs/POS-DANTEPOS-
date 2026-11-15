@@ -1982,6 +1982,16 @@ class TransactionUtil extends Util
                 if ($pd_balance > 0 || $pd_earned > 0) {
                     $pd_bits[] = 'Balance: '.$pd_fmt($pd_balance).' (worth KSh '.$pd_fmt($pd_balance * (float) $business_details->redeem_amount_per_unit_rp).')';
                 }
+                $pd_expiry = null;
+                if (! empty($business_details->rp_expiry_date) && ($pd_balance > 0 || $pd_earned > 0) && \Carbon::parse($business_details->rp_expiry_date)->endOfDay()->isFuture()) {
+                    $pd_expiry = \Carbon::parse($business_details->rp_expiry_date)->format('d M Y');
+                    $pd_bits[] = 'Expires: '.$pd_expiry;
+                }
+                $output['pd_points_name'] = $pd_name;
+                $output['pd_points_earned'] = $pd_fmt($pd_earned);
+                $output['pd_points_balance'] = $pd_fmt($pd_balance);
+                $output['pd_points_expiry'] = $pd_expiry;
+                $output['pd_footer_base'] = $output['footer_text'] ?? '';
                 if (! empty($pd_bits)) {
                     $output['footer_text'] = ($output['footer_text'] ?? '').'<br><strong>'.implode(' | ', $pd_bits).'</strong>';
                 }
