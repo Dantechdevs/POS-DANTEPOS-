@@ -23,6 +23,7 @@ class MpesaCredentials
                     'consumer_secret' => Crypt::decryptString($r->consumer_secret_enc),
                     'passkey' => Crypt::decryptString($r->passkey_enc),
                     'shortcode' => $r->stk_shortcode,
+                    'till_number' => ($r->account_type === 'till' && ! empty($r->till_number)) ? $r->till_number : null,
                     'transaction_type' => $r->transaction_type ?: 'CustomerBuyGoodsOnline',
                     'callback_secret' => $r->callback_secret,
                     'callback_url' => $r->callback_secret ? url('/mpesa/callback/'.$r->callback_secret) : null,
