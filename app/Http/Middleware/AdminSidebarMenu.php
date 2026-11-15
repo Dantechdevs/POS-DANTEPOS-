@@ -172,6 +172,13 @@ class AdminSidebarMenu
                         }
                         if (auth()->user()->can('product.create')) {
                             $sub->url(
+                                action([\App\Http\Controllers\SmartScannerController::class, 'index']),
+                                'Smart Scanner',
+                                ['icon' => '', 'active' => request()->segment(1) == 'products' && request()->segment(2) == 'smart-scanner']
+                            );
+                        }
+                        if (auth()->user()->can('product.create')) {
+                            $sub->url(
                                 action([\App\Http\Controllers\SellingPriceGroupController::class, 'updateProductPrice']),
                                 __('lang_v1.update_product_price'),
                                 ['icon' => '', 'active' => request()->segment(1) == 'update-product-price']
