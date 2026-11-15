@@ -285,6 +285,11 @@ class MpesaController extends Controller
                 return;
             }
 
+            // still processing: keep pending
+            if ($resultCode === 4999) {
+                return;
+            }
+
             $transaction->update([
                 'status' => $resultCode === 1032 ? 'cancelled' : 'failed',
                 'result_code' => $resultCode,

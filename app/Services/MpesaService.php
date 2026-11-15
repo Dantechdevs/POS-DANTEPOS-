@@ -35,7 +35,7 @@ class MpesaService
 
         $svc = clone $this;
         $svc->config = $creds;
-        $svc->baseUrl = ($creds['env'] ?? 'sandbox') === 'production'
+        $svc->baseUrl = in_array($creds['env'] ?? 'sandbox', ['production', 'live'], true)
             ? 'https://api.safaricom.co.ke'
             : 'https://sandbox.safaricom.co.ke';
         $svc->client = new Client([
@@ -91,7 +91,7 @@ class MpesaService
             'TransactionType' => $this->config['transaction_type'],
             'Amount' => (int) round($amount),
             'PartyA' => $this->normalizePhone($phone),
-            'PartyB' => config('services.mpesa.till_number') ?: $shortcode,
+            'PartyB' => ($this->config['till_number'] ?? null) ?: (config('services.mpesa.till_number') ?: $shortcode),
             'PhoneNumber' => $this->normalizePhone($phone),
             'CallBackURL' => $this->config['callback_url'],
             'AccountReference' => substr($accountReference, 0, 12),
