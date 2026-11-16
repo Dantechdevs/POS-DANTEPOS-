@@ -2,7 +2,7 @@
 
 namespace App\Listeners;
 
-use App\Services\GiftCardService;
+use App\Services\GiftCardTill;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,7 +17,7 @@ class RefundGiftCardOnPaymentDeleted
             $payment = data_get($event, 'transactionPayment');
 
             if ($payment && $payment->method === 'gift_card') {
-                GiftCardService::sync($payment, true);
+                GiftCardTill::sync($payment, true);
             }
         } catch (\Throwable $e) {
             Log::error('Gift card refund failed: '.$e->getMessage());
