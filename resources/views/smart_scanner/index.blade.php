@@ -114,6 +114,12 @@
                                             <input type="number" id="own_buying" class="form-control" min="0" step="any" inputmode="decimal">
                                         </div>
                                     </div>
+                                    <div class="col-sm-4">
+                                        <div class="form-group">
+                                            <label for="own_selling_input">Selling price</label>
+                                            <input type="number" id="own_selling_input" class="form-control" min="0" step="any" inputmode="decimal">
+                                        </div>
+                                    </div>
                                 </div>
                                 <button type="button" id="btn_add_stock" class="btn btn-info btn-lg">Add stock</button>
                             </div>
@@ -216,6 +222,7 @@ $(function () {
         $('#own_selling').text(r.selling_price);
         $('#own_quantity').val('');
         $('#own_buying').val(r.buying_price);
+        $('#own_selling_input').val(r.selling_price > 0 ? r.selling_price : '');
         setImage($('#own_image'), r.image_url);
         if (r.can_add_stock) {
             $('#own_blocked').addClass('hide');
@@ -306,7 +313,12 @@ $(function () {
         var buy = parseFloat($('#own_buying').val());
         if (isNaN(qty) || qty <= 0) { message('danger', 'Type how many you are adding.'); $('#own_quantity').focus(); return; }
         if (isNaN(buy) || buy < 0) { message('danger', 'Type the buying price.'); $('#own_buying').focus(); return; }
-        save({ mode: 'add_stock', code: current, quantity: qty, buying_price: buy }, $('#btn_add_stock'));
+        var sellRaw = $.trim($('#own_selling_input').val());
+        var sell = sellRaw === '' ? NaN : parseFloat(sellRaw);
+        if (isNaN(sell) || sell <= 0) { message('danger', 'Type the selling price.'); $('#own_selling_input').focus(); return; }
+        if (buy === 0 && !window.confirm('The buying price is 0, so this stock will be recorded at no cost. Continue?')) { return; }
+        if (sell < buy && !window.confirm('The selling price is lower than the buying price. Save anyway?')) { return; }
+        save({ mode: 'add_stock', code: current, quantity: qty, buying_price: buy, selling_price: sell, allow_zero_cost: buy === 0 ? 1 : 0 }, $('#btn_add_stock'));
     }
 
     // Wiring
@@ -320,7 +332,7 @@ $(function () {
     $('#new_buying').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); $('#new_selling').focus(); } });
     $('#new_selling').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); $('#new_quantity').focus(); } });
     $('#new_quantity').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); saveNew(); } });
-    $('#own_quantity, #own_buying').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); saveStock(); } });
+    $('#own_quantity, #own_buying, #own_selling_input').on('keydown', function (e) { if (e.which === 13) { e.preventDefault(); saveStock(); } });
 
     $('#new_buying, #new_selling').on('input', updateMargin);
     $('#new_unit').on('change', applyUnitStep);

@@ -242,6 +242,7 @@ class SmartScannerController extends Controller
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:50',
             'quantity' => 'required|numeric|min:0.0001',
+            'selling_price' => 'nullable|numeric|min:0.01',
             'buying_price' => 'required|numeric|min:0',
         ]);
         if ($validator->fails()) {
@@ -263,6 +264,14 @@ class SmartScannerController extends Controller
             return response()->json(['success' => 0, 'message' => 'Product not found.'], 422);
         }
 
+        $selling = $request->filled('selling_price') ? round((float) $request->input('selling_price'), 4) : null;
+        if ($selling === null && (float) $own['selling_price'] <= 0) {
+            return response()->json(['success' => 0, 'message' => 'This product has no selling price yet. Type the selling price.'], 422);
+        }
+        if ($buying <= 0 && ! $request->boolean('allow_zero_cost')) {
+            return response()->json(['success' => 0, 'message' => 'Type the buying price. A buying price of 0 records the stock at no cost.'], 422);
+        }
+
         if ($product->unit && ! $product->unit->allow_decimal && floor($quantity) != $quantity) {
             return response()->json(['success' => 0, 'message' => 'This product is sold in whole units. Enter a whole number.'], 422);
         }
@@ -271,6 +280,25 @@ class SmartScannerController extends Controller
             DB::beginTransaction();
 
             $product->product_locations()->syncWithoutDetaching([$location->id]);
+
+            $new_dpp = ((float) $own['buying_price'] <= 0 && $buying > 0) ? $buying : (float) $own['buying_price'];
+            $new_sell = $selling !== null ? $selling : (float) $own['selling_price'];
+            $vupdate = [];
+            if ($selling !== null) {
+                $vupdate['default_sell_price'] = $selling;
+                $vupdate['sell_price_inc_tax'] = $selling;
+            }
+            if ((float) $own['buying_price'] <= 0 && $buying > 0) {
+                $vupdate['default_purchase_price'] = $buying;
+                $vupdate['dpp_inc_tax'] = $buying;
+            }
+            if (! empty($vupdate) && $new_dpp > 0) {
+                $vupdate['profit_percent'] = round((($new_sell - $new_dpp) / $new_dpp) * 100, 2);
+            }
+            if (! empty($vupdate)) {
+                DB::table('variations')->where('id', $variation->id)->update($vupdate);
+            }
+
             $this->addStockLine($product, $variation, $quantity, $buying, $location->id, $business_id, $request->session()->get('user.id'));
 
             DB::commit();
