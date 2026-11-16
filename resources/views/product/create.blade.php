@@ -394,13 +394,62 @@
     $(document).ready(function() {
         __page_leave_confirmation('#product_add_form');
         (function () {
-            var html = '<div class="col-sm-4" id="initial_stock_wrap"><div class="form-group">' +
-                '<label for="initial_stock">Stock you have</label>' +
+            var html = '<div class="col-sm-4" id="top_price_wrap">' +
+                '<div class="row">' +
+                '<div class="col-xs-6"><div class="form-group"><label for="top_buy">Buying price:*</label>' +
+                '<input type="text" id="top_buy" class="form-control input_number" placeholder="0" autocomplete="off"></div></div>' +
+                '<div class="col-xs-6"><div class="form-group"><label for="top_sell">Selling price:*</label>' +
+                '<input type="text" id="top_sell" class="form-control input_number" placeholder="0" autocomplete="off"></div></div>' +
+                '</div>' +
+                '<div class="form-group"><label for="initial_stock">Stock you have</label>' +
                 '<input type="text" name="initial_stock" id="initial_stock" class="form-control input_number" placeholder="0" autocomplete="off">' +
-                '<p class="help-block"><i>Saved at the buying price. Manage Stock must be ticked.</i></p>' +
-                '</div></div>';
-            var box = $('input[name="enable_stock"]').closest('.col-sm-4');
-            if (box.length) { box.first().after(html); } else { $('#product_form_part').before(html); }
+                '<p class="help-block"><i>Saved at the buying price. Manage Stock must be ticked.</i></p></div>' +
+                '</div>';
+            var loc = $('select[name="product_locations[]"]').closest('.col-sm-4');
+            if (loc.length) { loc.first().after(html); } else { $('#product_form_part').before(html); }
+
+            var busy = false;
+            var noTax = function () { return !$('select[name="tax"]').val(); };
+
+            function pushSell(s) {
+                var $s = $('#single_dsp');
+                if (!$s.length) { return; }
+                busy = true;
+                $s.val(s).trigger('input').trigger('change');
+                if (noTax()) { $('#single_dsp_inc_tax').val(s); }
+                busy = false;
+            }
+            function pushBuy(b, s) {
+                var $d = $('#single_dpp');
+                if (!$d.length) { return; }
+                busy = true;
+                $d.val(b).trigger('input').trigger('change');
+                if (noTax()) { $('#single_dpp_inc_tax').val(b).trigger('change'); }
+                busy = false;
+                if (s !== '') { pushSell(s); }
+            }
+            function pullFromTable() {
+                if (busy) { return; }
+                if (!$('#top_buy').is(':focus')) { $('#top_buy').val($('#single_dpp').val()); }
+                if (!$('#top_sell').is(':focus')) { $('#top_sell').val($('#single_dsp').val()); }
+            }
+            function toggleBlock() {
+                var t = $('#type').val();
+                $('#top_price_wrap').toggle(!t || t === 'single');
+            }
+
+            $(document).on('input change', '#top_buy', function () { pushBuy($.trim($('#top_buy').val()), $.trim($('#top_sell').val())); });
+            $(document).on('input change', '#top_sell', function () { pushSell($.trim($('#top_sell').val())); });
+            $(document).on('change', '#single_dpp, #single_dsp, #profit_percent', pullFromTable);
+            $(document).on('change', '#type', toggleBlock);
+            $(document).ajaxComplete(function () {
+                toggleBlock();
+                var b = $.trim($('#top_buy').val()), s = $.trim($('#top_sell').val());
+                if ($('#single_dpp').length && (b !== '' || s !== '') && ($.trim($('#single_dpp').val()) !== b || $.trim($('#single_dsp').val()) !== s)) {
+                    pushBuy(b, s);
+                }
+            });
+            toggleBlock();
         })();
         (function () {
             document.addEventListener('click', function (ev) {
