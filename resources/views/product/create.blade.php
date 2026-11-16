@@ -394,6 +394,15 @@
     $(document).ready(function() {
         __page_leave_confirmation('#product_add_form');
         (function () {
+            var html = '<div class="col-sm-4" id="initial_stock_wrap"><div class="form-group">' +
+                '<label for="initial_stock">Stock you have</label>' +
+                '<input type="text" name="initial_stock" id="initial_stock" class="form-control input_number" placeholder="0" autocomplete="off">' +
+                '<p class="help-block"><i>Saved at the buying price. Manage Stock must be ticked.</i></p>' +
+                '</div></div>';
+            var box = $('input[name="enable_stock"]').closest('.col-sm-4');
+            if (box.length) { box.first().after(html); } else { $('#product_form_part').before(html); }
+        })();
+        (function () {
             document.addEventListener('click', function (ev) {
                 var btn = ev.target.closest ? ev.target.closest('#product_add_form button[type="submit"]') : null;
                 if (!btn) { return; }
