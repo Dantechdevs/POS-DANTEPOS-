@@ -393,6 +393,19 @@
 <script type="text/javascript">
     $(document).ready(function() {
         __page_leave_confirmation('#product_add_form');
+        (function () {
+            document.addEventListener('click', function (ev) {
+                var btn = ev.target.closest ? ev.target.closest('#product_add_form button[type="submit"]') : null;
+                if (!btn) { return; }
+                if (!$('.add-product-price-table:visible').length) { return; }
+                var num = function (s) { return parseFloat(String(s || '').replace(/,/g, '')); };
+                var sell = num($('#single_dsp').val()), buy = num($('#single_dpp').val()), stock = num($('#initial_stock').val());
+                var stop = function () { ev.preventDefault(); ev.stopImmediatePropagation(); };
+                if (isNaN(sell) || sell <= 0) { alert('Type the selling price. It cannot be 0.'); $('#single_dsp').focus(); stop(); return; }
+                if (stock > 0 && (isNaN(buy) || buy <= 0)) { alert('Type the buying price before adding stock.'); $('#single_dpp').focus(); stop(); return; }
+                if (!isNaN(buy) && buy > 0 && sell < buy && !window.confirm('The selling price is lower than the buying price. Save anyway?')) { stop(); }
+            }, true);
+        })();
         onScan.attachTo(document, {
             suffixKeyCodes: [13], // enter-key expected at the end of a scan
             reactToPaste: true, // Compatibility to built-in scanners in paste-mode (as opposed to keyboard-mode)

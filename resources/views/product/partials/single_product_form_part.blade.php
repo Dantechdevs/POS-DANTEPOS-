@@ -19,6 +19,9 @@
           @if(empty($quick_add))
             <th>@lang('lang_v1.product_image')</th>
           @endif
+          @if(empty($quick_add))
+            <th>Stock you have</th>
+          @endif
         </tr>
         <tr>
           <td>
@@ -54,6 +57,15 @@
                     'accept' => 'image/*', 'multiple']); !!}
                 <small><p class="help-block">@lang('purchase.max_file_size', ['size' => (config('constants.document_size_limit') / 1000000)]) <br> @lang('lang_v1.aspect_ratio_should_be_1_1')</p></small>
               </div>
+          </td>
+          @endif
+          @if(empty($quick_add))
+          <td>
+            <div class="form-group">
+              <label for="initial_stock">Stock you have</label>
+              <input type="text" name="initial_stock" id="initial_stock" class="form-control input-sm input_number" placeholder="0">
+              <small><p class="help-block">Saved at the buying price. Needs Manage Stock ticked.</p></small>
+            </div>
           </td>
           @endif
         </tr>
