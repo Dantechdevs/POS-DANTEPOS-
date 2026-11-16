@@ -14,6 +14,12 @@ class SubmitEtimsInvoices extends Command
 
     public function handle(EtimsService $etims)
     {
+        if (config('sync.role') === 'satellite') {
+            $this->warn('Skipped: this install is a satellite device. Only the primary server runs this job.');
+
+            return self::SUCCESS;
+        }
+
         $dry = (bool) $this->option('dry-run');
 
         if (! $dry) {

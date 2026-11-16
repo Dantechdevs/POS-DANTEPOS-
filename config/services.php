@@ -27,6 +27,7 @@ return [
         'passkey' => env('MPESA_PASSKEY'),
         'transaction_type' => env('MPESA_TRANSACTION_TYPE', 'CustomerBuyGoodsOnline'),
         'callback_url' => env('MPESA_CALLBACK_URL'),
+        'till_number' => env('MPESA_TILL_NUMBER'),
     ],
 
     'africastalking' => [

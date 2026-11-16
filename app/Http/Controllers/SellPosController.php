@@ -372,7 +372,7 @@ class SellPosController extends Controller
             if (!empty($input['products'])) {
                 $business_id = $request->session()->get('user.business_id');
 
-        if ($msg = \App\Services\GiftCardService::violation($request, $business_id)) {
+        if ($msg = \App\Services\GiftCardTill::violation($request, $business_id)) {
             $output = ['success' => 0, 'msg' => $msg];
 
             return ($request->ajax() || $request->wantsJson())
@@ -634,6 +634,9 @@ class SellPosController extends Controller
                 Media::uploadMedia($business_id, $transaction, $request, 'documents');
 
                 $this->transactionUtil->activityLog($transaction, 'added');
+
+                // sync: queue this sale for upload when running as a satellite
+                \App\Services\SyncOutbox::captureSale($transaction, $request);
 
                 
 
@@ -1233,7 +1236,7 @@ class SellPosController extends Controller
 
                 $business_id = $request->session()->get('user.business_id');
 
-            if ($msg = \App\Services\GiftCardService::violation($request, $business_id)) {
+            if ($msg = \App\Services\GiftCardTill::violation($request, $business_id)) {
                 $output = ['success' => 0, 'msg' => $msg];
 
                 return ($request->ajax() || $request->wantsJson())

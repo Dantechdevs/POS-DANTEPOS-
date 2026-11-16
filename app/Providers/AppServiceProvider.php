@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        \App\Services\DanteSettings::applyToConfig();
+
         \Illuminate\Support\Facades\Event::listen(\App\Events\TransactionPaymentDeleted::class, \App\Listeners\RefundGiftCardOnPaymentDeleted::class);
         \Illuminate\Support\Facades\Event::listen(\App\Events\SellCreatedOrModified::class, \App\Listeners\SendSmsReceipt::class);
 

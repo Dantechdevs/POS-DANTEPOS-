@@ -9,6 +9,10 @@ class EtimsSaleObserver
 {
     public function saved(Transaction $t)
     {
+        if (config('sync.role') === 'satellite') {
+            return;
+        }
+
         if (! config('etims.enabled')) {
             return;
         }

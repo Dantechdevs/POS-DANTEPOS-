@@ -103,4 +103,23 @@
             }
         }, 3000);
     }
+    // Till payment: copy the typed M-Pesa code into the receipt field, unless an STK push was sent.
+    $(document).on('input', '.mpesa-manual-code', function () {
+        const rowIndex = $(this).data('row-index');
+        const code = $(this).val().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10);
+        $(this).val(code);
+        if (!$('#mpesa_checkout_request_id_' + rowIndex).val()) {
+            $('#mpesa_receipt_number_' + rowIndex).val(code);
+        }
+    });
+
+    // Compact payment modal
+    $('head').append('<style id="dante-pay-modal-css">'
+        + '#modal_payment .modal-dialog{width:860px!important;max-width:96%!important;margin:15px auto!important}'
+        + '#modal_payment .modal-body{max-height:calc(100vh - 170px);overflow-y:auto;font-size:13px}'
+        + '#modal_payment .form-group{margin-bottom:8px}'
+        + '#modal_payment .well{padding:6px 10px!important;margin-bottom:6px!important;font-size:12px}'
+        + '#modal_payment textarea{height:48px!important;min-height:0}'
+        + '</style>');
+
 })(jQuery);

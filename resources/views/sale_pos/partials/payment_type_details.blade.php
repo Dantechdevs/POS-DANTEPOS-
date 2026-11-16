@@ -118,6 +118,29 @@
 	</div>
 
 	<div class="clearfix"></div>
+        @php
+                $mp_set = \App\Services\MpesaSettingsService::get((int) session('user.business_id'));
+                $mp_till = $mp_set['account_type'] === 'paybill' ? $mp_set['shortcode'] : $mp_set['till_number'];
+        @endphp
+        <div class="col-md-12">
+                <div class="well well-sm" style="margin-bottom:10px;">
+                        <b>Customer paid the till directly?</b>
+                        @if ($mp_till) Till/Paybill: <b>{{ $mp_till }}</b>. @endif
+                        Enter the 10-character code from their M-Pesa message instead of sending an STK push.
+                        @if ($mp_set['manual_enabled'] && $mp_set['manual_unverified_cap'] > 0)
+                                <br><small class="text-muted">Allowed up to KSh {{ number_format($mp_set['manual_unverified_cap'], 0) }} per payment. It is marked as unverified for reconciliation.</small>
+                        @else
+                                <br><small class="text-danger">Manual M-Pesa payments are not enabled. Use the STK push.</small>
+                        @endif
+                </div>
+                <div class="form-group">
+                        <label for="mpesa_manual_code_{{ $row_index }}">M-Pesa code (from the customer's message)</label>
+                        <input type="text" name="payment[{{ $row_index }}][mpesa_manual_code]" id="mpesa_manual_code_{{ $row_index }}"
+                                   class="form-control mpesa-manual-code" data-row-index="{{ $row_index }}"
+                                   placeholder="e.g. SJK1A2B3C4" maxlength="10" autocomplete="off" style="text-transform:uppercase;">
+                </div>
+        </div>
+        <div class="clearfix"></div>
 </div>
 
 

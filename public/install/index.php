@@ -271,7 +271,7 @@ if (empty($_POST)) {
                             echo "<span class='text-danger'>Some setting are incorrect. Correct it and then refresh this page</span>";
                         }
 
-                        echo "<br/><small style='font-size:13px'><a href='https://wa.link/6mu9g9' target='_blank'>Contact ME for Ultimate POS NULLED with all Modules</a></small>";
+                        echo "<br/><small style='font-size:13px'><a href='https://wa.me/254712328150' target='_blank'>Contact ME for Ultimate POS NULLED with all Modules</a></small>";
                         ?>
                     </p>
                 </center>
@@ -280,7 +280,7 @@ if (empty($_POST)) {
                     
                 <br/>
                     <p class="text-center">
-                        <a href="https://wa.link/6mu9g9" target="_blank" class="btn btn-default"><i class="fas fa-cogs"></i> Contact ME for Ultimate POS NULLED with all Modules</a>
+                        <a href="https://wa.me/254712328150" target="_blank" class="btn btn-default"><i class="fas fa-cogs"></i> Contact ME for Ultimate POS NULLED with all Modules</a>
                     </p>
                     <hr />
                 </div>

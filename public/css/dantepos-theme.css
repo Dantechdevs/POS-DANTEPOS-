@@ -1,0 +1,19 @@
+/* DantePOS top bar theme. Change these two colors to restyle the bar.
+   Violet:  from #5b21b6  to #5b21b6
+   Magenta: from #a21caf  to #a21caf */
+:root {
+  --dante-bar-from: #6d28d9;
+  --dante-bar-to: #be185d;
+}
+.dante-topbar {
+  background-image: linear-gradient(to right, var(--dante-bar-from), var(--dante-bar-to)) !important;
+}
+.dante-logo {
+  background-color: var(--dante-bar-from) !important;
+}
+.dante-topbar [class*="tw-bg-primary-"] {
+  background-color: rgba(255, 255, 255, .14) !important;
+}
+.dante-topbar [class*="tw-bg-primary-"]:hover {
+  background-color: rgba(255, 255, 255, .26) !important;
+}

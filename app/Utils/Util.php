@@ -165,6 +165,37 @@ class Util
         $payment_types['custom_pay_6'] = ! empty($custom_labels['payments']['custom_pay_6']) ? $custom_labels['payments']['custom_pay_6'] : __('lang_v1.custom_payment', ['number' => 6]);
         $payment_types['custom_pay_7'] = ! empty($custom_labels['payments']['custom_pay_7']) ? $custom_labels['payments']['custom_pay_7'] : __('lang_v1.custom_payment', ['number' => 7]);
 
+        //DantePOS payment configuration: renamed labels, disabled methods, default first
+        static $dp_cache = [];
+        $dp = null;
+        $dp_bid = ! empty($location) ? $location->business_id : ($business_id ?: session('user.business_id'));
+        if (! config('dantepos_payments_raw') && ! empty($dp_bid)) {
+            if (! array_key_exists($dp_bid, $dp_cache)) {
+                try {
+                    $row = \Illuminate\Support\Facades\DB::table('dantepos_payment_config')->where('business_id', $dp_bid)->value('config');
+                    $dp_cache[$dp_bid] = $row ? json_decode($row, true) : null;
+                } catch (\Throwable $e) {
+                    $dp_cache[$dp_bid] = null;
+                }
+            }
+            $dp = $dp_cache[$dp_bid];
+        }
+        if (is_array($dp)) {
+            foreach (($dp['labels'] ?? []) as $k => $v) {
+                if (isset($payment_types[$k]) && $v !== '') {
+                    $payment_types[$k] = $v;
+                }
+            }
+            if (! request()->is('reports/*')) {
+                foreach (($dp['disabled'] ?? []) as $k) {
+                    unset($payment_types[$k]);
+                }
+            }
+            if (! empty($dp['default']) && isset($payment_types[$dp['default']])) {
+                $payment_types = [$dp['default'] => $payment_types[$dp['default']]] + $payment_types;
+            }
+        }
+
         //Unset payment types if not enabled in business location
         if (! empty($location)) {
             $location_account_settings = ! empty($location->default_payment_accounts) ? json_decode($location->default_payment_accounts, true) : [];

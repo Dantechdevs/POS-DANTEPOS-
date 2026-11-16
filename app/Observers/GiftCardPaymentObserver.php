@@ -2,39 +2,34 @@
 
 namespace App\Observers;
 
-use App\Services\GiftCardService;
+use App\Services\GiftCardTill;
 use App\TransactionPayment;
 
 /**
- * Runs inside the sale's database transaction, so a bad gift card code or balance
- * rolls the whole sale back and nothing is charged.
+ * Keeps gift card balances in step with Gift Card payment lines.
+ * Runs inside the sale's database transaction, so a bad code or balance rolls the whole sale back.
+ * GiftCardTill::sync() is idempotent, so it is safe if more than one hook fires for one payment.
  */
 class GiftCardPaymentObserver
 {
     public function created(TransactionPayment $payment): void
     {
-        $svc = app(GiftCardService::class);
-
-        if ($svc->isGiftPayment($payment)) {
-            $svc->syncPayment($payment);
+        if ($payment->method === 'gift_card') {
+            GiftCardTill::sync($payment);
         }
     }
 
     public function updated(TransactionPayment $payment): void
     {
-        $svc = app(GiftCardService::class);
-
-        if ($svc->method() !== null) {
-            $svc->syncPayment($payment);
+        if ($payment->method === 'gift_card' || $payment->wasChanged('method')) {
+            GiftCardTill::sync($payment);
         }
     }
 
     public function deleted(TransactionPayment $payment): void
     {
-        $svc = app(GiftCardService::class);
-
-        if ($svc->method() !== null) {
-            $svc->syncPayment($payment, true);
+        if ($payment->method === 'gift_card') {
+            GiftCardTill::sync($payment, true);
         }
     }
 }

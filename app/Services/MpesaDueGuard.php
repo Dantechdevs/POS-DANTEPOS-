@@ -19,9 +19,7 @@ class MpesaDueGuard
         }
 
         $mt = MpesaTransaction::where('checkout_request_id', $checkoutRequestId)
-            ->where(function ($q) use ($businessId) {
-                $q->where('business_id', $businessId)->orWhereNull('business_id');
-            })
+            ->where('business_id', $businessId)
             ->lockForUpdate()
             ->first();
 

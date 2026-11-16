@@ -444,6 +444,17 @@ class ProductController extends Controller
         if (! auth()->user()->can('product.create')) {
             abort(403, 'Unauthorized action.');
         }
+        if ($request->input('type') === 'single' && $request->session()->get('business.enable_price_tax')) {
+            $chk_sell = $this->productUtil->num_uf((string) $request->input('single_dsp'));
+            $chk_buy = $this->productUtil->num_uf((string) $request->input('single_dpp'));
+            $chk_stock = $this->productUtil->num_uf((string) $request->input('initial_stock'));
+            if ($chk_sell <= 0) {
+                return back()->withInput()->with('status', ['success' => 0, 'msg' => 'Type the selling price. A product cannot be saved with a selling price of 0.']);
+            }
+            if ($chk_stock > 0 && $chk_buy <= 0) {
+                return back()->withInput()->with('status', ['success' => 0, 'msg' => 'Type the buying price before adding stock, so the stock is not recorded at no cost.']);
+            }
+        }
         try {
             $business_id = $request->session()->get('user.business_id');
             $form_fields = ['name', 'brand_id', 'unit_id', 'category_id', 'tax', 'type', 'barcode_type', 'sku', 'alert_quantity', 'tax_type', 'weight', 'product_description', 'sub_unit_ids', 'preparation_time_in_minutes', 'product_custom_field1', 'product_custom_field2', 'product_custom_field3', 'product_custom_field4', 'product_custom_field5', 'product_custom_field6', 'product_custom_field7', 'product_custom_field8', 'product_custom_field9', 'product_custom_field10', 'product_custom_field11', 'product_custom_field12', 'product_custom_field13', 'product_custom_field14', 'product_custom_field15', 'product_custom_field16', 'product_custom_field17', 'product_custom_field18', 'product_custom_field19', 'product_custom_field20',];
@@ -512,6 +523,15 @@ class ProductController extends Controller
 
             if ($product->type == 'single') {
                 $this->productUtil->createSingleProductVariation($product->id, $product->sku, $request->input('single_dpp'), $request->input('single_dpp_inc_tax'), $request->input('profit_percent'), $request->input('single_dsp'), $request->input('single_dsp_inc_tax'));
+                if ($product->enable_stock == 1 && (float) $this->productUtil->num_uf((string) $request->input('initial_stock')) > 0) {
+                    $os_locations = (array) $request->input('product_locations');
+                    $os_location_id = ! empty($os_locations) ? reset($os_locations) : null;
+                    if ($os_location_id) {
+                        $os_start = $request->session()->get('financial_year.start');
+                        $os_date = $os_start ? \Carbon::createFromFormat('Y-m-d', $os_start)->toDateTimeString() : now()->startOfYear()->toDateTimeString();
+                        $this->productUtil->addSingleProductOpeningStock($business_id, $product, [$os_location_id => ['purchase_price' => (string) $request->input('single_dpp'), 'quantity' => (string) $request->input('initial_stock')]], $os_date, $request->session()->get('user.id'));
+                    }
+                }
             } elseif ($product->type == 'variable') {
                 if (! empty($request->input('product_variation'))) {
                     $input_variations = $request->input('product_variation');
