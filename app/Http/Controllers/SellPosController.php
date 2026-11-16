@@ -372,7 +372,7 @@ class SellPosController extends Controller
             if (!empty($input['products'])) {
                 $business_id = $request->session()->get('user.business_id');
 
-        if ($msg = \App\Services\GiftCardService::violation($request, $business_id)) {
+        if ($msg = \App\Services\GiftCardTill::violation($request, $business_id)) {
             $output = ['success' => 0, 'msg' => $msg];
 
             return ($request->ajax() || $request->wantsJson())
@@ -1236,7 +1236,7 @@ class SellPosController extends Controller
 
                 $business_id = $request->session()->get('user.business_id');
 
-            if ($msg = \App\Services\GiftCardService::violation($request, $business_id)) {
+            if ($msg = \App\Services\GiftCardTill::violation($request, $business_id)) {
                 $output = ['success' => 0, 'msg' => $msg];
 
                 return ($request->ajax() || $request->wantsJson())
