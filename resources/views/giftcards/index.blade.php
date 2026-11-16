@@ -13,12 +13,6 @@
         </div>
     @endif
 
-    @if (! $methodSlot)
-        <div class="alert alert-warning">
-            Gift cards can be issued, but they cannot be used at the till yet. Set <code>GIFT_CARD_METHOD=custom_pay_1</code> in <code>.env</code>, label that payment method "Gift Card", then run <code>php artisan config:clear</code>.
-        </div>
-    @endif
-
     <div class="row">
         <div class="col-md-3"><div class="well text-center"><small>Owed to customers (usable)</small><h3>KSh {{ number_format($tiles['outstanding'], 2) }}</h3></div></div>
         <div class="col-md-3"><div class="well text-center"><small>Redeemed today</small><h3>KSh {{ number_format($tiles['redeemed_today'], 2) }}</h3></div></div>
