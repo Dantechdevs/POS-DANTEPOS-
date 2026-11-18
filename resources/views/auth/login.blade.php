@@ -114,7 +114,7 @@
                             @lang('lang_v1.welcome_back')
                         </h1>
                         <h2 class="tw-text-sm tw-font-medium tw-text-gray-500">
-                            @lang('lang_v1.login_to_your') {{ config('app.name', 'ultimatePOS') }}
+                            @lang('lang_v1.login_to_your') {{ config('app.name', 'DantePOS') }}
                         </h2>
                     </div>
 
